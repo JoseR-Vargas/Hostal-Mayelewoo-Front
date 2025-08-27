@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Hostal Mayelewoo - Córdoba, Argentina</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+	<!-- Header -->
+	<header class="header">
+		<div class="container">
+			<div class="nav">
+				<h1 class="logo">Hostal Mayelewoo</h1>
+				<nav class="nav-menu">
+					<a href="#inicio" class="nav-link">Inicio</a>
+					<a href="#habitaciones" class="nav-link">Habitaciones</a>
+					<a href="#contacto" class="nav-link">Contacto</a>
+				</nav>
+			</div>
+		</div>
+	</header>
+
+	<!-- Hero Section -->
+	<section id="inicio" class="hero">
+		<div class="hero-content">
+			<div class="hero-text">
+				<h2 class="hero-title">Bienvenido a Hostal Mayelewoo</h2>
+				<p class="hero-subtitle">Tu hogar en el corazón de Córdoba</p>
+				<p class="hero-description">Habitaciones y apartamentos cómodos en una ubicación privilegiada</p>
+				<a href="#contacto" class="cta-button">Reservar Ahora</a>
+			</div>
+		</div>
+		<div class="hero-images">
+			<img src="img/mayelewo1.jpeg" alt="Hostal Mayelewoo exterior" class="hero-img hero-img-1">
+			<img src="img/mayelewo2.jpeg" alt="Hostal Mayelewoo interior" class="hero-img hero-img-2">
+		</div>
+	</section>
+
+	<!-- Ubicación -->
+	<section class="location">
+		<div class="container">
+			<div class="location-content">
+				<h3 class="section-title">Nuestra Ubicación</h3>
+				<p class="location-address">Humberto Primo 3070, Córdoba, Argentina</p>
+				<p class="location-description">Estratégicamente ubicado para que disfrutes de todo lo que Córdoba tiene para ofrecer</p>
+			</div>
+		</div>
+	</section>
+
+	<!-- Habitaciones -->
+	<section id="habitaciones" class="rooms">
+		<div class="container">
+			<h3 class="section-title">Habitaciones y Apartamentos</h3>
+			<div class="rooms-grid">
+				<div class="room-card">
+					<h4 class="room-title">Habitaciones</h4>
+					<p class="room-description">Cómodas habitaciones individuales y dobles, perfectas para una estadía relajante</p>
+					<ul class="room-features">
+						<li>Baño común</li>
+						<li>WiFi gratuito</li>
+						<li>Aire acondicionado</li>
+					</ul>
+				</div>
+				<div class="room-card">
+					<h4 class="room-title">Apartamentos</h4>
+					<p class="room-description">Apartamentos completamente equipados para estadías más largas</p>
+					<ul class="room-features">
+						<li>Cocina equipada</li>
+						<li>Sala de estar</li>
+						<li>Balcón privado</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Contacto -->
+	<section id="contacto" class="contact">
+		<div class="container">
+			<h3 class="section-title">Reserva tu Estadía</h3>
+			<p class="contact-subtitle">Completa el formulario y nos pondremos en contacto contigo vía WhatsApp</p>
+			
+			<form id="contactForm" class="contact-form">
+				<div class="form-row">
+					<div class="form-group">
+						<label for="nombre">Nombre*</label>
+						<input type="text" id="nombre" name="nombre" required>
+					</div>
+					<div class="form-group">
+						<label for="apellido">Apellido*</label>
+						<input type="text" id="apellido" name="apellido" required>
+					</div>
+				</div>
+				
+				<div class="form-row">
+					<div class="form-group">
+						<label for="dni">DNI*</label>
+						<input type="text" id="dni" name="dni" required>
+					</div>
+					<div class="form-group">
+						<label for="email">Correo Electrónico*</label>
+						<input type="email" id="email" name="email" required>
+					</div>
+				</div>
+
+
+
+				<div class="form-group">
+					<label for="huespedes">Cantidad de huéspedes</label>
+					<select id="huespedes" name="huespedes">
+						<option value="1">1 huésped</option>
+						<option value="2">2 huéspedes</option>
+						<option value="3">3 huéspedes</option>
+						<option value="4">4 huéspedes</option>
+						<option value="5+">5 o más huéspedes</option>
+					</select>
+				</div>
+
+				<div class="form-group">
+					<label for="tipo">Tipo de alojamiento</label>
+					<select id="tipo" name="tipo">
+						<option value="habitacion">Habitación</option>
+						<option value="apartamento">Apartamento</option>
+						<option value="consultar">Consultar opciones</option>
+					</select>
+				</div>
+
+				<div class="form-group">
+					<label for="mensaje">Escribe un mensaje</label>
+					<textarea id="mensaje" name="mensaje" rows="4" maxlength="200" placeholder="Cuéntanos sobre tus necesidades especiales o consultas"></textarea>
+					<div class="character-counter">
+						<span id="charCount">0</span>/200 caracteres
+					</div>
+				</div>
+
+				<button type="submit" class="submit-button">Enviar Consulta por WhatsApp</button>
+			</form>
+		</div>
+	</section>
+
+	<!-- Footer -->
+	<footer class="footer">
+		<div class="container">
+			<div class="footer-content">
+				<div class="footer-section">
+					<h4>Hostal Mayelewoo</h4>
+					<p>Humberto Primo 3070<br>Córdoba, Argentina</p>
+				</div>
+				
+				<div class="footer-section">
+					<h4>Contacto</h4>
+					<div class="contact-info">
+						<a href="#" id="whatsappLink" class="contact-link whatsapp">
+							<span class="contact-icon">📱</span>
+							WhatsApp
+						</a>
+					</div>
+				</div>
+				
+				<div class="footer-section">
+					<h4>Síguenos</h4>
+					<div class="social-links">
+						<a href="#" class="social-link instagram" target="_blank">
+							<span class="social-icon">📷</span>
+							Instagram
+						</a>
+						<a href="#" class="social-link facebook" target="_blank">
+							<span class="social-icon">📘</span>
+							Facebook
+						</a>
+					</div>
+				</div>
+			</div>
+			
+			<div class="footer-bottom">
+				<p>&copy; 2024 Hostal Mayelewoo. Todos los derechos reservados.</p>
+			</div>
+		</div>
+	</footer>
+
+	<script src="js/script.js"></script>
+</body>
+</html>
