@@ -75,6 +75,23 @@ function generateWhatsAppLink(message) {
 	return `https://wa.me/${CONFIG.whatsappNumber}?text=${message}`;
 }
 
+// Función para detectar si es móvil
+function isMobileDevice() {
+	return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+		   window.innerWidth <= 768;
+}
+
+// Función para abrir WhatsApp según el dispositivo
+function openWhatsApp(url) {
+	if (isMobileDevice()) {
+		// En móviles, usar location.href es más confiable
+		window.location.href = url;
+	} else {
+		// En desktop, usar window.open
+		window.open(url, '_blank');
+	}
+}
+
 // Función para mostrar errores
 function showErrors(errors) {
 	// Remover errores anteriores
@@ -166,10 +183,16 @@ if (contactForm) {
 		// Mostrar mensaje de éxito
 		showSuccess();
 		
-		// Abrir WhatsApp después de un pequeño delay
-		setTimeout(() => {
-			window.open(whatsappUrl, '_blank');
-		}, 1000);
+		// Abrir WhatsApp usando la función optimizada para móviles
+		if (isMobileDevice()) {
+			// En móviles, redirigir inmediatamente
+			openWhatsApp(whatsappUrl);
+		} else {
+			// En desktop, mantener el delay
+			setTimeout(() => {
+				openWhatsApp(whatsappUrl);
+			}, 1000);
+		}
 	});
 }
 
@@ -179,7 +202,7 @@ if (whatsappLink) {
 		e.preventDefault();
 		const message = encodeURIComponent(`¡Hola! Quiero información sobre ${CONFIG.hostalName}`);
 		const whatsappUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${message}`;
-		window.open(whatsappUrl, '_blank');
+		openWhatsApp(whatsappUrl);
 	});
 }
 
