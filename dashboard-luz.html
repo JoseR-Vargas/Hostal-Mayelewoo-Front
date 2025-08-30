@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<title>Dashboard Contadores - Hostal Mayelewoo</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+	<header class="header">
+		<div class="container">
+			<div class="nav nav-centered">
+				<h1 class="logo">Hostal Mayelewoo</h1>
+				<nav class="nav-menu"></nav>
+			</div>
+		</div>
+	</header>
+
+	<section class="contact page-top-offset">
+		<div class="container vouchers-center">
+			<h3 class="section-title">Dashboard Contadores de Luz</h3>
+			<p class="contact-subtitle">Gestión de lecturas de medidores</p>
+
+			<div id="metricsLuz" class="metrics-grid"></div>
+
+			<h4 class="section-subtitle">Datos de Lecturas Registradas</h4>
+			<div class="table-container">
+				<table class="data-table" id="contadorLuzTable">
+					<thead>
+						<tr>
+							<th>Nombre</th>
+							<th>DNI</th>
+							<th>Medición</th>
+							<th>Hab/Apto</th>
+							<th>Fecha/Hora</th>
+							<th>Foto</th>
+						</tr>
+					</thead>
+					<tbody id="contadorLuzTableBody"></tbody>
+				</table>
+			</div>
+		</div>
+	</section>
+
+	<footer class="footer footer-centered">
+		<div class="container">
+			<div class="footer-bottom">
+				<p>&copy; 2024 Hostal Mayelewoo. Todos los derechos reservados.</p>
+			</div>
+		</div>
+	</footer>
+
+	<script src="js/dashboard-luz.js"></script>
+</body>
+</html>
