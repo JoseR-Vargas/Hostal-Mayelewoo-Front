@@ -194,7 +194,7 @@ a:hover {
 
 .hero-subtitle {
 	font-size: 1.8rem;
-	font-weight: 300;
+	font-weight: 700;
 	color: var(--color-primary);
 	margin-bottom: 1.5rem;
 	letter-spacing: 0.01em;
@@ -225,12 +225,43 @@ a:hover {
 	cursor: pointer;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
+	animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Keyframes para el efecto de pulso del botón CTA */
+@keyframes pulse-glow {
+	0% {
+		transform: scale(1);
+		box-shadow: var(--shadow-glow);
+		filter: brightness(1);
+	}
+	25% {
+		transform: scale(1.02);
+		box-shadow: 0 0 25px rgba(0, 217, 255, 0.4), var(--shadow-glow);
+		filter: brightness(1.05);
+	}
+	50% {
+		transform: scale(1.05);
+		box-shadow: 0 0 35px rgba(0, 217, 255, 0.6), 0 0 15px rgba(124, 58, 237, 0.4), var(--shadow-hover);
+		filter: brightness(1.15);
+	}
+	75% {
+		transform: scale(1.02);
+		box-shadow: 0 0 25px rgba(0, 217, 255, 0.4), var(--shadow-glow);
+		filter: brightness(1.05);
+	}
+	100% {
+		transform: scale(1);
+		box-shadow: var(--shadow-glow);
+		filter: brightness(1);
+	}
 }
 
 .cta-button:hover {
-	transform: translateY(-3px) scale(1.02);
-	box-shadow: var(--shadow-hover), var(--shadow-glow);
-	filter: brightness(1.1);
+	transform: translateY(-3px) scale(1.08);
+	box-shadow: 0 0 40px rgba(0, 217, 255, 0.7), 0 0 20px rgba(124, 58, 237, 0.5), var(--shadow-hover);
+	filter: brightness(1.2);
+	animation-play-state: paused; /* Pausa la animación de pulso al hacer hover */
 }
 
 /* Botones secundarios estilo Kubera */
@@ -661,30 +692,64 @@ a:hover {
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
-	gap: 0.8rem;
+	gap: 1rem;
 	color: var(--text-secondary);
 	text-decoration: none;
 	transition: var(--transition);
-	padding: 0.8rem;
-	border-radius: var(--border-radius-sm);
-	background: transparent;
-	border: 1px solid transparent;
+	padding: 1rem 1.2rem;
+	border-radius: var(--border-radius);
+	background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+	border: 1px solid var(--color-border);
 	font-size: 1.05rem;
+	position: relative;
+	overflow: hidden;
+}
+
+.contact-link::before,
+.social-link::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: -100%;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.1), transparent);
+	transition: var(--transition);
+}
+
+.contact-link:hover::before,
+.social-link:hover::before {
+	left: 100%;
 }
 
 .contact-link:hover,
 .social-link:hover {
 	color: var(--color-primary);
-	background-color: var(--bg-card);
-	border-color: var(--color-border);
-	transform: translateX(5px);
-	text-shadow: 0 0 8px rgba(0, 217, 255, 0.4);
+	background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+	border-color: var(--color-primary);
+	transform: translateY(-3px) scale(1.02);
+	box-shadow: 0 8px 25px rgba(0, 217, 255, 0.2);
 }
 
 .contact-icon,
 .social-icon {
-	font-size: 1.3rem;
-	filter: drop-shadow(0 0 4px rgba(0, 217, 255, 0.3));
+	font-size: 1.4rem;
+	width: 1.4rem;
+	height: 1.4rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+	color: var(--bg-primary);
+	border-radius: 50%;
+	padding: 0.3rem;
+	transition: var(--transition);
+}
+
+.contact-link:hover .contact-icon,
+.social-link:hover .social-icon {
+	transform: rotate(15deg) scale(1.1);
+	box-shadow: 0 0 15px rgba(0, 217, 255, 0.5);
 }
 
 .footer-bottom {
@@ -958,21 +1023,60 @@ a:hover {
 
 /* Centrado específico de footer para mobile solamente */
 @media (max-width: 768px) {
+	.footer {
+		padding: 3rem 0 2rem;
+	}
+
+	.footer-content {
+		gap: 2.5rem;
+	}
+
 	.footer-centered .footer-content {
 		display: grid;
 		grid-template-columns: 1fr;
 		text-align: center;
 		align-items: center;
+		gap: 2.5rem;
 	}
 
 	.footer-centered .footer-section {
 		align-items: center;
 		text-align: center;
+		max-width: 320px;
+		margin: 0 auto;
 	}
 
 	.footer-centered .contact-info,
 	.footer-centered .social-links {
 		align-items: center;
+		gap: 1.2rem;
+	}
+
+	.footer-section h4 {
+		font-size: 1.3rem;
+		margin-bottom: 1.2rem;
+	}
+
+	.contact-link,
+	.social-link {
+		padding: 1.2rem 1.5rem;
+		font-size: 1.1rem;
+		justify-content: center;
+		border-radius: var(--border-radius);
+		min-height: 3.5rem;
+	}
+
+	.contact-icon,
+	.social-icon {
+		font-size: 1.5rem;
+		width: 1.5rem;
+		height: 1.5rem;
+		padding: 0.4rem;
+	}
+
+	.footer-bottom {
+		padding-top: 2.5rem;
+		font-size: 1rem;
 	}
 }
 
