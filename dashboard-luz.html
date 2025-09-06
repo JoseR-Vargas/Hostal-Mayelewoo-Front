@@ -14,33 +14,46 @@
 		<div class="container">
 			<div class="nav nav-centered">
 				<h1 class="logo">Hostal Mayelewoo</h1>
-				<nav class="nav-menu"></nav>
+				<nav class="nav-menu">
+					<a href="dashboard.html" class="nav-link">📋 Dashboard Principal</a>
+					<button onclick="logout()" class="logout-btn">Cerrar Sesión</button>
+				</nav>
 			</div>
 		</div>
 	</header>
 
 	<section class="contact page-top-offset">
 		<div class="container vouchers-center">
-			<h3 class="section-title">Dashboard Contadores de Luz</h3>
-			<p class="contact-subtitle">Gestión de lecturas de medidores</p>
+			<h3 class="section-title">Mediciones de Contadores</h3>
+			<p class="contact-subtitle">Lecturas registradas por los huéspedes</p>
 
-			<div id="metricsLuz" class="metrics-grid"></div>
-
-			<h4 class="section-subtitle">Datos de Lecturas Registradas</h4>
+			<!-- Tabla de mediciones -->
 			<div class="table-container">
-				<table class="data-table" id="contadorLuzTable">
+				<table class="data-table" id="medicionesTable">
 					<thead>
 						<tr>
-							<th>Nombre</th>
+							<th>Habitación</th>
+							<th>Huésped</th>
 							<th>DNI</th>
-							<th>Medición</th>
-							<th>Hab/Apto</th>
-							<th>Fecha/Hora</th>
-							<th>Foto</th>
+							<th>Lectura</th>
+							<th>Foto Medidor</th>
+							<th>Fecha</th>
 						</tr>
 					</thead>
-					<tbody id="contadorLuzTableBody"></tbody>
+					<tbody id="medicionesTableBody">
+						<!-- Los datos se cargan dinámicamente -->
+					</tbody>
 				</table>
+			</div>
+
+			<!-- Mensaje cuando no hay datos -->
+			<div id="noDataMessage" class="no-data-message" style="display: none;">
+				<p>No se encontraron mediciones registradas.</p>
+			</div>
+
+			<!-- Overlay de carga -->
+			<div id="loadingOverlay" style="display: none;">
+				<div class="loading-spinner">Cargando datos...</div>
 			</div>
 		</div>
 	</section>
@@ -53,6 +66,7 @@
 		</div>
 	</footer>
 
+	<script src="js/login.js"></script>
 	<script src="js/dashboard-luz.js"></script>
 </body>
 </html>

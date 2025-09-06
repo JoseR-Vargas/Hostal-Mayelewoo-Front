@@ -1,3 +1,9 @@
+// Verificar autenticación antes de cargar el dashboard
+if (!requireAuth()) {
+	// La función requireAuth ya redirecciona si no está autenticado
+	throw new Error('Acceso no autorizado');
+}
+
 // Reutiliza estilos/UX existentes (SOLID/DRY): solo lógica específica del dashboard
 const DASHBOARD_CONFIG = {
 	apiBaseUrl: resolveApiBaseUrl()

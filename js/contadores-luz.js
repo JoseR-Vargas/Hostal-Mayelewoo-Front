@@ -124,7 +124,7 @@ class ContadorFormHandler {
         this.setLoadingState(true);
 
         try {
-            const formData = this.prepareFormData();
+            const formData = await this.prepareFormData();
             
             // Simular envío (reemplazar con llamada real al backend)
             await this.submitToBackend(formData);
@@ -181,36 +181,88 @@ class ContadorFormHandler {
     /**
      * Prepara los datos del formulario para envío
      */
-    prepareFormData() {
-        const formData = new FormData();
-        
-        // Campos de texto
-        const textFields = ['nombre', 'apellido', 'dni', 'numeroMedicion', 'nroApartamento', 'timestamp'];
-        textFields.forEach(fieldId => {
-            const value = document.getElementById(fieldId).value.trim();
-            formData.append(fieldId, value);
-        });
+    async prepareFormData() {
+        // Obtener lecturas para calcular consumo
+        const lecturaActual = parseFloat(document.getElementById('numeroMedicion').value);
+        const lecturaAnterior = parseFloat(localStorage.getItem(`lectura_anterior_${document.getElementById('nroApartamento').value}`) || '0');
 
-        // Archivo de imagen
-        const fotoFile = this.fotoInput.files[0];
-        if (fotoFile) {
-            formData.append('fotoMedidor', fotoFile);
+        // Convertir la imagen a base64 si existe
+        let fotoBase64 = null;
+        const fotoInput = document.getElementById('fotoMedidor');
+        if (fotoInput.files && fotoInput.files[0]) {
+            fotoBase64 = await this.convertirImagenABase64(fotoInput.files[0]);
         }
 
-        return formData;
+        const data = {
+            dni: document.getElementById('dni').value.trim(),
+            nombre: document.getElementById('nombre').value.trim(),
+            apellidos: document.getElementById('apellido').value.trim(),
+            habitacion: document.getElementById('nroApartamento').value.trim(),
+            numeroMedidor: `MED-${document.getElementById('nroApartamento').value}-${Date.now()}`,
+            lecturaActual: lecturaActual,
+            lecturaAnterior: lecturaAnterior,
+            fechaLectura: new Date().toISOString(),
+            fotoMedidor: fotoBase64,
+            observaciones: document.getElementById('observaciones') ? document.getElementById('observaciones').value : ''
+        };
+
+        // Guardar lectura actual como anterior para la próxima vez
+        localStorage.setItem(`lectura_anterior_${data.habitacion}`, lecturaActual.toString());
+
+        return data;
     }
 
     /**
-     * Simula envío al backend (reemplazar con implementación real)
+     * Convierte una imagen a base64
+     */
+    convertirImagenABase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /**
+     * Envía datos al backend NestJS + MongoDB Atlas
      */
     async submitToBackend(formData) {
-        // TODO: Implementar llamada real al backend NestJS + MongoDB Atlas
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log('Datos de medición enviados:', Object.fromEntries(formData));
-                resolve();
-            }, 1500);
-        });
+        try {
+            // Configuración dinámica de API URL
+            const apiUrl = this.getApiUrl();
+            
+            const response = await fetch(`${apiUrl}/contadores`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Error al enviar los datos');
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Error al conectar con el backend:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtiene la URL de la API según el entorno
+     */
+    getApiUrl() {
+        const { hostname, protocol } = window.location;
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return `${protocol}//${hostname}:3000/api`;
+        }
+        // En producción, asumir que la API está en el mismo dominio
+        return `${protocol}//${hostname}/api`;
     }
 
     /**
