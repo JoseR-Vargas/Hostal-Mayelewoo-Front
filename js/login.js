@@ -5,8 +5,8 @@ const CONFIG = {
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
             return `${protocol}//${hostname}:3000/api`;
         }
-        // En producción, asumir que la API está en el mismo dominio
-        return `${protocol}//${hostname}/api`;
+        // En producción, usar el backend desplegado en Render
+        return 'https://mayelewoo-back.onrender.com/api';
     })(),
     STORAGE_KEY: 'mayelewoo_admin_token',
     ADMIN_DASHBOARD: 'dashboard.html'

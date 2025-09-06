@@ -9,7 +9,8 @@ function resolveApiBaseUrl() {
 	if (hostname === 'localhost' || hostname === '127.0.0.1') {
 		return `${protocol}//${hostname}:3000`; // NestJS por defecto
 	}
-	return '';
+	// En producción, usar el backend desplegado en Render
+	return 'https://mayelewoo-back.onrender.com';
 }
 
 function isValidEmail(email) {
