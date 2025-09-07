@@ -186,42 +186,35 @@ class ContadorFormHandler {
         const lecturaActual = parseFloat(document.getElementById('numeroMedicion').value);
         const lecturaAnterior = parseFloat(localStorage.getItem(`lectura_anterior_${document.getElementById('nroApartamento').value}`) || '0');
 
-        // Convertir la imagen a base64 si existe
-        let fotoBase64 = null;
+        const formData = new FormData();
+        
+        // Agregar campos de texto
+        formData.append('dni', document.getElementById('dni').value.trim());
+        formData.append('nombre', document.getElementById('nombre').value.trim());
+        formData.append('apellidos', document.getElementById('apellido').value.trim());
+        formData.append('habitacion', document.getElementById('nroApartamento').value.trim());
+        formData.append('numeroMedidor', `MED-${document.getElementById('nroApartamento').value}-${Date.now()}`);
+        formData.append('lecturaActual', lecturaActual.toString());
+        formData.append('lecturaAnterior', lecturaAnterior.toString());
+        formData.append('fechaLectura', new Date().toISOString());
+        formData.append('timestamp', new Date().toISOString());
+        
+        // Agregar observaciones si existen
+        const observaciones = document.getElementById('observaciones');
+        if (observaciones) {
+            formData.append('observaciones', observaciones.value);
+        }
+        
+        // Agregar archivo de imagen
         const fotoInput = document.getElementById('fotoMedidor');
         if (fotoInput.files && fotoInput.files[0]) {
-            fotoBase64 = await this.convertirImagenABase64(fotoInput.files[0]);
+            formData.append('fotoMedidor', fotoInput.files[0]);
         }
 
-        const data = {
-            dni: document.getElementById('dni').value.trim(),
-            nombre: document.getElementById('nombre').value.trim(),
-            apellidos: document.getElementById('apellido').value.trim(),
-            habitacion: document.getElementById('nroApartamento').value.trim(),
-            numeroMedidor: `MED-${document.getElementById('nroApartamento').value}-${Date.now()}`,
-            lecturaActual: lecturaActual,
-            lecturaAnterior: lecturaAnterior,
-            fechaLectura: new Date().toISOString(),
-            fotoMedidor: fotoBase64,
-            observaciones: document.getElementById('observaciones') ? document.getElementById('observaciones').value : ''
-        };
-
         // Guardar lectura actual como anterior para la próxima vez
-        localStorage.setItem(`lectura_anterior_${data.habitacion}`, lecturaActual.toString());
+        localStorage.setItem(`lectura_anterior_${document.getElementById('nroApartamento').value}`, lecturaActual.toString());
 
-        return data;
-    }
-
-    /**
-     * Convierte una imagen a base64
-     */
-    convertirImagenABase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-            reader.readAsDataURL(file);
-        });
+        return formData;
     }
 
     /**
@@ -234,10 +227,7 @@ class ContadorFormHandler {
             
             const response = await fetch(`${apiUrl}/contadores`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
+                body: formData // No establecer Content-Type para FormData
             });
 
             const data = await response.json();

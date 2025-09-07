@@ -147,7 +147,7 @@ class AuthManager {
             let errorMessage = 'Error de conexión con el servidor';
             
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                errorMessage = 'No se puede conectar al servidor. Verifica que el backend esté ejecutándose en http://localhost:3000';
+                errorMessage = 'No se puede conectar al servidor. Verifica tu conexión a internet.';
             } else if (error.name === 'SyntaxError') {
                 errorMessage = 'Respuesta inválida del servidor';
             }

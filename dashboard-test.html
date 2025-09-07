@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<title>Dashboard Debug Simple</title>
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+	<div style="padding: 20px;">
+		<h1>Dashboard Debug</h1>
+		<div id="debug-info"></div>
+		<table border="1" style="margin-top: 20px;">
+			<thead>
+				<tr>
+					<th>Nombre</th>
+					<th>Files</th>
+					<th>Imágenes</th>
+				</tr>
+			</thead>
+			<tbody id="debug-table"></tbody>
+		</table>
+	</div>
+
+	<script>
+		async function testDashboard() {
+			const debugDiv = document.getElementById('debug-info');
+			const table = document.getElementById('debug-table');
+			
+			try {
+				debugDiv.innerHTML = 'Cargando datos...<br>';
+				
+				// Test API call
+				const response = await fetch('http://localhost:3000/api/vouchers');
+				debugDiv.innerHTML += `API Status: ${response.status}<br>`;
+				
+				if (!response.ok) {
+					throw new Error(`HTTP ${response.status}`);
+				}
+				
+				const data = await response.json();
+				debugDiv.innerHTML += `API Success: ${data.success}<br>`;
+				debugDiv.innerHTML += `Data count: ${data.data ? data.data.length : 0}<br>`;
+				
+				const vouchers = data.data || [];
+				
+				if (vouchers.length === 0) {
+					table.innerHTML = '<tr><td colspan="3">No data found</td></tr>';
+					return;
+				}
+				
+				// Render each voucher
+				table.innerHTML = vouchers.map((voucher, index) => {
+					const filesInfo = voucher.files 
+						? `Count: ${voucher.files.length}, Files: ${JSON.stringify(voucher.files)}`
+						: 'No files array';
+					
+					const images = voucher.files && Array.isArray(voucher.files)
+						? voucher.files.map(f => {
+							if (f.name && /\.(jpg|jpeg|png|gif|webp)$/i.test(f.name)) {
+								return `<img src="${f.url}" style="width: 50px; height: 50px; margin: 2px; border: 1px solid #ccc;" 
+									onclick="window.open('${f.url}', '_blank')" 
+									onerror="this.style.border='2px solid red'; console.error('Failed to load: ${f.url}')">`;
+							}
+							return `<a href="${f.url}" target="_blank">${f.name}</a>`;
+						}).join('')
+						: 'No images';
+				
+					return `
+						<tr>
+							<td>${voucher.nombre || ''} ${voucher.apellido || ''}</td>
+							<td style="font-size: 12px;">${filesInfo}</td>
+							<td>${images}</td>
+						</tr>
+					`;
+				}).join('');
+				
+				debugDiv.innerHTML += 'Render complete!<br>';
+				
+			} catch (error) {
+				debugDiv.innerHTML += `Error: ${error.message}<br>`;
+				console.error('Dashboard test error:', error);
+			}
+		}
+		
+		document.addEventListener('DOMContentLoaded', testDashboard);
+	</script>
+</body>
+</html>

@@ -88,7 +88,7 @@ function buildFormDataPayload(data, files) {
 async function sendToBackend(formData) {
 	// Preparado para NestJS (ruta sugerida)
 	const url = VOUCHERS_CONFIG.apiBaseUrl
-		? `${VOUCHERS_CONFIG.apiBaseUrl}/vouchers`
+		? `${VOUCHERS_CONFIG.apiBaseUrl}/api/vouchers`
 		: '/api/vouchers';
 	const res = await fetch(url, {
 		method: 'POST',

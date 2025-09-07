@@ -41,6 +41,8 @@ class DashboardMediciones {
             if (response.ok) {
                 const data = await response.json();
                 this.mediciones = data.data || [];
+                console.log('Mediciones cargadas:', this.mediciones.length);
+                console.log('Primera medición:', this.mediciones[0]);
             } else {
                 console.warn('Error al obtener mediciones, usando datos de ejemplo');
                 this.mediciones = this.obtenerDatosEjemplo();
@@ -112,12 +114,36 @@ class DashboardMediciones {
                              alt="Foto medidor ${medicion.habitacion}" 
                              class="foto-medidor-preview" 
                              onclick="this.classList.toggle('foto-ampliada')"
-                             title="Clic para ampliar">` 
+                             title="Clic para ampliar"
+                             loading="lazy"> `
                         : '<span class="sin-foto">Sin foto</span>'}
                 </td>
-                <td>${this.formatearFecha(medicion.fechaLectura)}</td>
+                <td>${this.formatearFecha(medicion.fechaLectura || medicion.createdAt)}</td>
             </tr>
         `).join('');
+    }
+
+    setupImageErrorHandlers() {
+        const images = document.querySelectorAll('#medicionesTableBody img');
+        console.log('Configurando manejo de errores para', images.length, 'imágenes');
+        
+        images.forEach((img, index) => {
+            console.log(`Imagen ${index + 1}: ${img.src}`);
+            
+            // Remover handlers previos si existen
+            img.onload = null;
+            img.onerror = null;
+            
+            img.onload = function() {
+                console.log(`✅ Imagen ${index + 1} cargada correctamente:`, this.src);
+            };
+            
+            img.onerror = function() {
+                console.error(`❌ Error cargando imagen ${index + 1}:`, this.src);
+                this.style.display = 'none';
+                this.parentElement.innerHTML = '<span class="sin-foto">Imagen no disponible</span>';
+            };
+        });
     }
 
     formatearFecha(fechaISO) {
