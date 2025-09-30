@@ -66,7 +66,7 @@ class DashboardMediciones {
                 nombre: 'Ana',
                 apellidos: 'García López',
                 dni: '11223344',
-                lecturaActual: 234.5,
+                numeroMedicion: '234.5',
                 fechaLectura: new Date('2025-09-06T10:30:00').toISOString(),
                 fotoMedidor: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNkI3MjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5Gb3RvIDEwMTwvdGV4dD4KPC9zdmc+'
             },
@@ -75,7 +75,7 @@ class DashboardMediciones {
                 nombre: 'Carlos',
                 apellidos: 'Rodríguez Silva',
                 dni: '55667788',
-                lecturaActual: 156.8,
+                numeroMedicion: '156.8',
                 fechaLectura: new Date('2025-09-06T14:15:00').toISOString(),
                 fotoMedidor: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRUZGNkZGIi8+Cjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjODg1NkYyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5Gb3RvIDEwMjwvdGV4dD4KPC9zdmc+'
             },
@@ -84,7 +84,7 @@ class DashboardMediciones {
                 nombre: 'María',
                 apellidos: 'Fernández Torres',
                 dni: '99887766',
-                lecturaActual: 189.3,
+                numeroMedicion: '189.3',
                 fechaLectura: new Date('2025-09-06T16:45:00').toISOString(),
                 fotoMedidor: null // Ejemplo sin foto
             }
@@ -102,15 +102,21 @@ class DashboardMediciones {
         }
 
         noDataMessage.style.display = 'none';
-        tbody.innerHTML = this.mediciones.map(medicion => `
+        tbody.innerHTML = this.mediciones.map(medicion => {
+            let foto = medicion.fotoMedidor;
+            if (foto && foto.startsWith('/')) {
+                // Normalizar URL relativa con api base (remover posible doble //)
+                foto = `${this.apiUrl.replace(/\/api$/, '')}${foto}`.replace(/([^:]\/)\/\//, '$1/');
+            }
+            return `
             <tr>
                 <td>${medicion.habitacion}</td>
                 <td>${medicion.nombre} ${medicion.apellidos}</td>
                 <td>${medicion.dni}</td>
-                <td>${medicion.lecturaActual} kWh</td>
+                <td>${medicion.numeroMedicion || medicion.lecturaActual || 'N/A'}</td>
                 <td>
-                    ${medicion.fotoMedidor ? 
-                        `<img src="${medicion.fotoMedidor}" 
+                    ${foto ? 
+                        `<img src="${foto}" 
                              alt="Foto medidor ${medicion.habitacion}" 
                              class="foto-medidor-preview" 
                              onclick="this.classList.toggle('foto-ampliada')"
@@ -120,7 +126,7 @@ class DashboardMediciones {
                 </td>
                 <td>${this.formatearFecha(medicion.fechaLectura || medicion.createdAt)}</td>
             </tr>
-        `).join('');
+        `}).join('');
     }
 
     setupImageErrorHandlers() {

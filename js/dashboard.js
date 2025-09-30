@@ -11,6 +11,14 @@ const DASHBOARD_CONFIG = {
 
 function resolveApiBaseUrl() {
 	const { hostname, protocol } = window.location;
+	const params = new URLSearchParams(window.location.search);
+	const backendOverride = params.get('backend');
+	if (backendOverride === 'local') {
+		return `${protocol}//localhost:3000`;
+	}
+	if (backendOverride && /^https?:\/\//i.test(backendOverride)) {
+		return backendOverride.replace(/\/$/, '');
+	}
 	if (hostname === 'localhost' || hostname === '127.0.0.1') {
 		return `${protocol}//${hostname}:3000`;
 	}
@@ -186,9 +194,21 @@ function renderTable(vouchers) {
 		appendCell(tr, v.timestamp || v.createdAt || '—', 'Fecha/Hora');
 		const filesTd = document.createElement('td');
 		filesTd.setAttribute('data-label', 'Archivos');
+		// Normalizar: si no hay v.files pero sí v.fotos (backend crudo)
+		if ((!v.files || !v.files.length) && Array.isArray(v.fotos) && v.fotos.length) {
+			const apiBase = DASHBOARD_CONFIG.apiBaseUrl.replace(/\/$/, '');
+			v.files = v.fotos.map(f => ({
+				name: f,
+				url: `${apiBase}/uploads/vouchers/${f}`
+			}));
+		}
 		if (Array.isArray(v.files) && v.files.length) {
 			const frag = document.createDocumentFragment();
 			v.files.forEach((f, idx) => {
+				// Normalizar URL relativa
+				if (f.url && f.url.startsWith('/')) {
+					f.url = `${DASHBOARD_CONFIG.apiBaseUrl.replace(/\/$/, '')}${f.url}`;
+				}
 				// Verificar si es una imagen
 				const isImage = f.name && /\.(jpg|jpeg|png|gif|webp)$/i.test(f.name);
 				
@@ -208,6 +228,7 @@ function renderTable(vouchers) {
 					img.style.cursor = 'pointer';
 					img.style.border = '1px solid #ccc';
 					img.title = 'Clic para ver completa';
+					img.loading = 'lazy';
 					
 					img.onclick = () => {
 						window.open(f.url, '_blank');

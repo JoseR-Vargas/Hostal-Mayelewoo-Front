@@ -6,6 +6,14 @@ const VOUCHERS_CONFIG = {
 
 function resolveApiBaseUrl() {
 	const { hostname, protocol } = window.location;
+	const params = new URLSearchParams(window.location.search);
+	const backendOverride = params.get('backend');
+	if (backendOverride === 'local') {
+		return `${protocol}//localhost:3000`;
+	}
+	if (backendOverride && /^https?:\/\//i.test(backendOverride)) {
+		return backendOverride.replace(/\/$/, '');
+	}
 	if (hostname === 'localhost' || hostname === '127.0.0.1') {
 		return `${protocol}//${hostname}:3000`; // NestJS por defecto
 	}

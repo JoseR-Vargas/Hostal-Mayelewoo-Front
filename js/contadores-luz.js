@@ -182,27 +182,21 @@ class ContadorFormHandler {
      * Prepara los datos del formulario para envío
      */
     async prepareFormData() {
-        // Obtener lecturas para calcular consumo
-        const lecturaActual = parseFloat(document.getElementById('numeroMedicion').value);
-        const lecturaAnterior = parseFloat(localStorage.getItem(`lectura_anterior_${document.getElementById('nroApartamento').value}`) || '0');
-
         const formData = new FormData();
         
-        // Agregar campos de texto
+        // Agregar campos de texto del formulario HTML
         formData.append('dni', document.getElementById('dni').value.trim());
         formData.append('nombre', document.getElementById('nombre').value.trim());
         formData.append('apellidos', document.getElementById('apellido').value.trim());
-        formData.append('habitacion', document.getElementById('nroApartamento').value.trim());
-        formData.append('numeroMedidor', `MED-${document.getElementById('nroApartamento').value}-${Date.now()}`);
-        formData.append('lecturaActual', lecturaActual.toString());
-        formData.append('lecturaAnterior', lecturaAnterior.toString());
+        formData.append('nroApartamento', document.getElementById('nroApartamento').value.trim());
+        formData.append('numeroMedicion', document.getElementById('numeroMedicion').value.trim());
         formData.append('fechaLectura', new Date().toISOString());
         formData.append('timestamp', new Date().toISOString());
         
         // Agregar observaciones si existen
         const observaciones = document.getElementById('observaciones');
-        if (observaciones) {
-            formData.append('observaciones', observaciones.value);
+        if (observaciones && observaciones.value.trim()) {
+            formData.append('observaciones', observaciones.value.trim());
         }
         
         // Agregar archivo de imagen
@@ -210,9 +204,6 @@ class ContadorFormHandler {
         if (fotoInput.files && fotoInput.files[0]) {
             formData.append('fotoMedidor', fotoInput.files[0]);
         }
-
-        // Guardar lectura actual como anterior para la próxima vez
-        localStorage.setItem(`lectura_anterior_${document.getElementById('nroApartamento').value}`, lecturaActual.toString());
 
         return formData;
     }
@@ -248,10 +239,17 @@ class ContadorFormHandler {
      */
     getApiUrl() {
         const { hostname, protocol } = window.location;
+        const params = new URLSearchParams(window.location.search);
+        const backendOverride = params.get('backend');
+        if (backendOverride === 'local') {
+            return `${protocol}//localhost:3000/api`;
+        }
+        if (backendOverride && /^https?:\/\//i.test(backendOverride)) {
+            return backendOverride.replace(/\/$/, '') + '/api';
+        }
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
             return `${protocol}//${hostname}:3000/api`;
         }
-        // En producción, usar el backend desplegado en Render
         return 'https://mayelewoo-back.onrender.com/api';
     }
 
