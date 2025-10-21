@@ -295,40 +295,47 @@ class ContadorFormHandler {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message-notification ${type}`;
         messageDiv.innerHTML = `
-            <p>${message}</p>
+            <p style="margin: 0;">${message}</p>
             <button onclick="this.parentElement.remove()" aria-label="Cerrar">&times;</button>
         `;
 
-        // Estilos inline para el mensaje
+        // Estilos inline para el mensaje (centrado debajo del botón)
         Object.assign(messageDiv.style, {
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
+            marginTop: '1.5rem',
             padding: '15px 20px',
             borderRadius: '8px',
             color: 'white',
             fontSize: '14px',
-            zIndex: '10000',
-            maxWidth: '300px',
+            maxWidth: '100%',
+            width: '100%',
             boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
             backgroundColor: type === 'error' ? '#ef4444' : '#10b981',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            gap: '10px'
+            gap: '10px',
+            textAlign: 'center',
+            animation: 'slideIn 0.3s ease-out'
         });
 
         messageDiv.querySelector('button').style.cssText = `
             background: none;
             border: none;
             color: white;
-            font-size: 18px;
+            font-size: 20px;
             cursor: pointer;
             padding: 0;
             margin: 0;
+            min-width: 24px;
         `;
 
-        document.body.appendChild(messageDiv);
+        // Insertar después del botón de envío
+        this.submitBtn.parentNode.insertBefore(messageDiv, this.submitBtn.nextSibling);
+        
+        // Hacer scroll suave hacia la notificación
+        setTimeout(() => {
+            messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
 
         // Auto-remove después de 5 segundos
         setTimeout(() => {

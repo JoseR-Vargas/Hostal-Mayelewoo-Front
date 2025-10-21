@@ -32,15 +32,30 @@ function showFormBanner(container, { type, text }) {
 	const div = document.createElement('div');
 	div.className = 'voucher-banner';
 	div.style.cssText = `
-		margin-bottom: 1rem;
-		padding: 1rem;
+		margin-top: 1.5rem;
+		padding: 1rem 1.5rem;
 		border-radius: 8px;
 		border-left: 4px solid ${type === 'error' ? '#e53e3e' : '#38a169'};
 		background-color: ${type === 'error' ? '#fed7d7' : '#c6f6d5'};
 		color: ${type === 'error' ? '#c53030' : '#22543d'};
+		text-align: center;
+		font-weight: 600;
+		animation: slideIn 0.3s ease-out;
 	`;
 	div.textContent = text;
-	container.insertBefore(div, container.firstChild);
+	
+	// Insertar después del botón de envío
+	const submitBtn = container.querySelector('button[type="submit"]');
+	if (submitBtn) {
+		submitBtn.parentNode.insertBefore(div, submitBtn.nextSibling);
+	} else {
+		container.appendChild(div);
+	}
+	
+	// Hacer scroll suave hacia la notificación
+	setTimeout(() => {
+		div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	}, 100);
 }
 
 function getVoucherFormData() {
