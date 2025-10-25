@@ -174,7 +174,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	form.addEventListener('submit', async (e) => {
 		e.preventDefault();
-		if (submitBtn) submitBtn.disabled = true;
+		if (submitBtn) {
+			submitBtn.disabled = true;
+			submitBtn.textContent = 'Procesando...';
+		}
 
 		const data = getVoucherFormData();
 		const files = (document.getElementById('fotos')?.files) || [];
@@ -182,7 +185,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		if (errors.length) {
 			showFormBanner(form, { type: 'error', text: errors[0] });
-			if (submitBtn) submitBtn.disabled = false;
+			if (submitBtn) {
+				submitBtn.disabled = false;
+				submitBtn.textContent = 'Enviar Voucher';
+			}
 			return;
 		}
 
@@ -191,10 +197,12 @@ document.addEventListener('DOMContentLoaded', () => {
 			await sendToBackend(payload);
 			showFormBanner(form, { type: 'success', text: '¡Voucher enviado correctamente!' });
 			form.reset();
+			if (submitBtn) submitBtn.textContent = 'Enviar Voucher';
 		} catch (err) {
 			// Guardar localmente para entorno offline/local
 			saveLocallyFallback(data, files);
 			showFormBanner(form, { type: 'success', text: 'Guardado localmente. Se enviará cuando el backend esté disponible.' });
+			if (submitBtn) submitBtn.textContent = 'Enviar Voucher';
 		} finally {
 			if (submitBtn) submitBtn.disabled = false;
 		}
