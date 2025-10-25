@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<title>Dashboard Calculadora Medidor - Hostal Mayelewoo</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+	<header class="header">
+		<div class="container">
+			<div class="nav nav-centered">
+				<h1 class="logo">Hostal Mayelewoo</h1>
+				<nav class="nav-menu">
+					<a href="dashboard.html" class="nav-link">📋 Vouchers</a>
+					<!-- <a href="dashboard-luz.html" class="nav-link">📊 Contadores Luz</a> -->
+					<button onclick="logout()" class="logout-btn">Cerrar Sesión</button>
+				</nav>
+			</div>
+		</div>
+	</header>
+
+	<section class="contact page-top-offset">
+		<div class="container vouchers-center">
+			<h3 class="section-title">Calculadora de Medidor</h3>
+			<p class="contact-subtitle">Gestión de cálculos de consumo eléctrico</p>
+
+			<!-- Métricas -->
+			<div id="metricsCalculator" class="metrics-grid"></div>
+
+
+
+			<!-- Tabla de datos -->
+			<h4 class="section-subtitle">Registros de Cálculos</h4>
+			<div class="table-container">
+				<table class="data-table" id="calculatorTable">
+					<thead>
+						<tr>
+							<th>Nombre</th>
+							<th>Apellido</th>
+							<th>DNI</th>
+							<th>Habitación</th>
+							<th>Medición Ant.</th>
+							<th>Medición Act.</th>
+							<th>Consumo (kWh)</th>
+							<th>Monto Total</th>
+							<th>Fecha</th>
+							<th>Fotos</th>
+						</tr>
+					</thead>
+					<tbody id="calculatorTableBody">
+						<!-- Los datos se cargarán dinámicamente -->
+					</tbody>
+				</table>
+			</div>
+
+			<!-- Mensaje cuando no hay datos -->
+			<div id="noDataMessage" class="no-data-message" style="display: none;">
+				<p>No hay registros de cálculos disponibles</p>
+			</div>
+		</div>
+	</section>
+
+	<!-- Modal para ver imágenes ampliadas -->
+	<div id="imageModal" class="modal">
+		<div class="modal-content">
+			<span class="close-modal" onclick="closeImageModal()">&times;</span>
+			<h3 class="modal-title" id="imageModalTitle">Foto del Medidor</h3>
+			<img id="modalImage" src="" alt="Foto ampliada" style="width: 100%; border-radius: 8px; margin-top: 1rem;">
+		</div>
+	</div>
+
+	<!-- Loading Overlay -->
+	<div id="loadingOverlay">
+		<div class="loading-spinner"></div>
+	</div>
+
+	<footer class="footer footer-centered">
+		<div class="container">
+			<div class="footer-bottom">
+				<p>&copy; 2024 Hostal Mayelewoo. Todos los derechos reservados.</p>
+			</div>
+		</div>
+	</footer>
+
+	<script src="js/login.js"></script>
+	<script src="js/dashboard-calculator.js"></script>
+</body>
+</html>

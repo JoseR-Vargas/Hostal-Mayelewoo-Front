@@ -1307,14 +1307,34 @@ a:hover {
 }
 
 .error-message {
+	display: none;
 	background-color: #FED7D7;
 	color: #C53030;
 	padding: 0.75rem;
 	border-radius: var(--border-radius-sm);
-	margin-bottom: 1rem;
+	margin-top: 0.5rem;
+	margin-bottom: 0;
 	font-size: 0.85rem;
 	border-left: 4px solid #E53E3E;
 	line-height: 1.3;
+}
+
+.form-group.error .error-message {
+	display: block;
+}
+
+.form-group.error input,
+.form-group.error select,
+.form-group.error textarea {
+	border-color: #E53E3E;
+	background-color: #FFF5F5;
+}
+
+.form-group.error input:focus,
+.form-group.error select:focus,
+.form-group.error textarea:focus {
+	border-color: #C53030;
+	box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.15);
 }
 
 .login-form .cta-button {
@@ -1614,6 +1634,25 @@ a:hover {
 	color: var(--text-secondary);
 }
 
+.form-control {
+	padding: 0.75rem 1rem;
+	border: 2px solid var(--color-border);
+	border-radius: var(--border-radius-sm);
+	font-family: var(--font-family);
+	font-size: 1rem;
+	color: var(--text-primary);
+	background-color: #FFFFFF;
+	transition: var(--transition);
+	min-width: 200px;
+}
+
+.form-control:focus {
+	outline: none;
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.15);
+	background-color: rgba(248, 249, 250, 0.8);
+}
+
 #searchInput {
 	padding: 0.5rem 1rem;
 	border: 1px solid var(--color-border);
@@ -1858,6 +1897,11 @@ a:hover {
 		align-items: stretch;
 	}
 	
+	.form-control {
+		min-width: auto;
+		width: 100%;
+	}
+	
 	#searchInput {
 		min-width: auto;
 		width: 100%;
@@ -1880,5 +1924,227 @@ a:hover {
 	
 	.habitaciones-grid {
 		grid-template-columns: 1fr;
+	}
+}
+
+/* ==================== CALCULATOR MEDIDOR STYLES ==================== */
+
+/* Contenedor principal del calculador */
+.calculator-container {
+	max-width: 600px;
+	margin: 0 auto;
+	padding: 2rem 1rem;
+	background: var(--bg-card);
+	border-radius: var(--border-radius);
+	box-shadow: var(--shadow);
+	border: 1px solid var(--color-border);
+}
+
+/* Contenedor de subida de fotos */
+.photo-upload-container {
+	display: grid;
+	gap: 1.5rem;
+	margin: 1.5rem 0;
+}
+
+.photo-upload-group {
+	border: 2px dashed var(--color-border);
+	border-radius: var(--border-radius);
+	padding: 1.5rem;
+	text-align: center;
+	transition: var(--transition);
+	background: var(--bg-secondary);
+}
+
+.photo-upload-group:hover {
+	border-color: var(--color-primary);
+	background: var(--bg-card);
+}
+
+.photo-upload-group.has-photo {
+	border-color: var(--color-accent);
+	border-style: solid;
+}
+
+.photo-preview {
+	max-width: 100%;
+	max-height: 200px;
+	object-fit: cover;
+	border-radius: var(--border-radius-sm);
+	margin-top: 1rem;
+	box-shadow: var(--shadow);
+}
+
+/* Botones de subida de fotos */
+.upload-buttons {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.upload-btn {
+	padding: 0.75rem 1rem;
+	border: 2px solid var(--color-primary);
+	background: transparent;
+	color: var(--color-primary);
+	border-radius: var(--border-radius-sm);
+	cursor: pointer;
+	transition: var(--transition);
+	font-weight: 600;
+	font-size: 0.9rem;
+}
+
+.upload-btn:hover {
+	background: var(--color-primary);
+	color: white;
+}
+
+/* Inputs de medición */
+.measurement-input {
+	position: relative;
+}
+
+.measurement-input input {
+	padding-right: 3rem;
+}
+
+.measurement-unit {
+	position: absolute;
+	right: 1rem;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--text-secondary);
+	font-weight: 600;
+	pointer-events: none;
+}
+
+/* Resultado del cálculo */
+.calculation-result {
+	background: var(--bg-card);
+	border: 2px solid var(--color-accent);
+	border-radius: var(--border-radius);
+	padding: 1.5rem;
+	margin: 1.5rem 0;
+	text-align: center;
+	display: none;
+}
+
+.calculation-result.show {
+	display: block;
+	animation: slideInCalculator 0.3s ease;
+}
+
+@keyframes slideInCalculator {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.result-amount {
+	font-size: 2rem;
+	font-weight: 700;
+	color: var(--color-primary);
+	margin: 0.5rem 0;
+}
+
+/* Estado de procesamiento */
+.processing {
+	pointer-events: none;
+	opacity: 0.7;
+	position: relative;
+}
+
+.processing::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 20px;
+	height: 20px;
+	border: 2px solid transparent;
+	border-top: 2px solid white;
+	border-radius: 50%;
+	animation: spinCalculator 1s linear infinite;
+}
+
+@keyframes spinCalculator {
+	to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Modal de resultado */
+.modal {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.8);
+	z-index: 10000;
+	backdrop-filter: blur(5px);
+}
+
+.modal.show {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	animation: fadeInModal 0.3s ease;
+}
+
+@keyframes fadeInModal {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+.modal-content {
+	background: var(--bg-card);
+	padding: 2rem;
+	border-radius: var(--border-radius);
+	max-width: 400px;
+	width: 90%;
+	text-align: center;
+	box-shadow: var(--shadow-hover);
+	border: 1px solid var(--color-border);
+}
+
+.modal-title {
+	color: var(--color-accent);
+	font-size: 1.5rem;
+	font-weight: 700;
+	margin-bottom: 1rem;
+}
+
+.modal-amount {
+	font-size: 2.5rem;
+	font-weight: 800;
+	color: var(--color-primary);
+	margin: 1rem 0;
+}
+
+.close-modal {
+	margin-top: 1.5rem;
+}
+
+/* Responsive para calculador */
+@media (max-width: 768px) {
+	.calculator-container {
+		margin: 1rem;
+		padding: 1.5rem 1rem;
+	}
+	
+	.upload-buttons {
+		grid-template-columns: 1fr;
+	}
+	
+	.modal-content {
+		padding: 1.5rem;
+		margin: 1rem;
 	}
 }
