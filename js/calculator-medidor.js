@@ -335,8 +335,10 @@ class MeterCalculator {
         }
         
         try {
-            // Obtener la URL del API desde el entorno o usar localhost por defecto
-            const API_URL = window.API_URL || 'http://localhost:3000';
+            // Obtener la URL del API desde config.js
+            const API_URL = window.API_URL || window.APP_CONFIG?.API_URL || 'https://mayelewoo-back.onrender.com';
+            
+            console.log('📤 Enviando cálculo a:', `${API_URL}/api/calculos-medidor`);
             
             const response = await fetch(`${API_URL}/api/calculos-medidor`, {
                 method: 'POST',
@@ -551,7 +553,7 @@ window.MeterCalculatorUtils = {
             return { success: true, synced: 0 };
         }
         
-        const API_URL = window.API_URL || 'http://localhost:3000';
+        const API_URL = window.API_URL || window.APP_CONFIG?.API_URL || 'https://mayelewoo-back.onrender.com';
         let syncedCount = 0;
         const failedItems = [];
         

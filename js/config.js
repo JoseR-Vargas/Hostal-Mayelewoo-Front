@@ -31,7 +31,8 @@ const CONFIG = {
 window.APP_CONFIG = CONFIG;
 window.API_URL = CONFIG.API_URL;
 
-// Log de configuración (solo en desarrollo)
-if (window.location.hostname === 'localhost') {
-    console.log('🔧 Configuración cargada:', CONFIG);
-}
+// Log de configuración (para debugging en todos los entornos)
+const environment = window.location.hostname === 'localhost' ? 'DESARROLLO' : 'PRODUCCIÓN';
+console.log(`🔧 Entorno: ${environment}`);
+console.log('🔧 Configuración cargada:', CONFIG);
+console.log(`📡 API URL: ${CONFIG.API_URL}`);

@@ -8,12 +8,28 @@
 // ============================================
 // CONFIGURACIÓN Y CONSTANTES
 // ============================================
-const API_BASE_URL = 'http://localhost:3000';
+function getApiBaseUrl() {
+    // Usar la URL del config.js si está disponible
+    if (window.API_URL) return window.API_URL;
+    if (window.APP_CONFIG?.API_URL) return window.APP_CONFIG.API_URL;
+    
+    // Fallback: detectar automáticamente
+    const { hostname, protocol } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return `${protocol}//${hostname}:3000`;
+    }
+    return 'https://mayelewoo-back.onrender.com';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 const ENDPOINTS = {
     CALCULOS: '/api/calculos-medidor',
     FOTO_ANTERIOR: (id) => `/api/calculos-medidor/${id}/foto-anterior`,
     FOTO_ACTUAL: (id) => `/api/calculos-medidor/${id}/foto-actual`,
 };
+
+// Log para debugging
+console.log('📊 Dashboard Calculator - API URL:', API_BASE_URL);
 
 // ============================================
 // ESTADO DE LA APLICACIÓN (Single Source of Truth)
