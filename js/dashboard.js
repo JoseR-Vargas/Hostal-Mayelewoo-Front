@@ -111,13 +111,12 @@ async function renderDashboard() {
 	console.log('Vouchers received:', vouchers);
 	console.log('Vouchers count:', vouchers ? vouchers.length : 0);
 	
-	// FORZAR uso de datos reales - solo usar mock en caso de emergencia
-	if (!vouchers || vouchers.length === 0) {
-		console.warn('⚠️ No real data available, falling back to mock data');
-		vouchers = getMockVouchers();
-	} else {
-		console.log('✅ Using real API data');
+	// Asegurar que vouchers sea un array
+	if (!Array.isArray(vouchers)) {
+		vouchers = [];
 	}
+	
+	console.log('✅ Using real API data:', vouchers.length, 'vouchers');
 
 	// Log each voucher to debug
 	vouchers.forEach((voucher, i) => {
@@ -137,23 +136,6 @@ async function renderDashboard() {
 }
 
 document.addEventListener('DOMContentLoaded', renderDashboard);
-
-function getMockVouchers() {
-	// Datos actualizados con URLs reales del backend
-	return [{
-		nombre: 'María',
-		apellido: 'Pérez',
-		dni: '30123456',
-		email: 'maria.perez@example.com',
-		ref4: '1234',
-		hab: 'Apto 2B',
-		monto: '45000',
-		timestamp: new Date().toISOString(),
-		files: [
-			{ name: 'comprobante.jpg', url: 'https://mayelewoo-back.onrender.com/uploads/vouchers/ce7b2c185107d67ab891aa9a3865412cf.jpeg' }
-		]
-	}];
-}
 
 function renderMetrics(vouchers) {
 	const metrics = document.getElementById('metrics');
