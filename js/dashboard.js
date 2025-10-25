@@ -159,10 +159,12 @@ function renderMetrics(vouchers) {
 	const metrics = document.getElementById('metrics');
 	if (!metrics) return;
 	const today = new Date().toISOString().slice(0, 10);
-	const todayCount = vouchers.filter(v => (v.timestamp || '').slice(0, 10) === today).length;
+	const todayCount = vouchers.filter(v => (v.timestamp || v.createdAt || '').slice(0, 10) === today).length;
+	const totalCount = vouchers.length;
 
 	metrics.innerHTML = '';
-	metrics.appendChild(metricCard('Comprobantes cargados', todayCount));
+	metrics.appendChild(metricCard('Total Comprobantes', totalCount));
+	metrics.appendChild(metricCard('Cargados Hoy', todayCount));
 }
 
 function metricCard(title, value) {
@@ -231,7 +233,7 @@ function renderTable(vouchers) {
 					img.loading = 'lazy';
 					
 					img.onclick = () => {
-						window.open(f.url, '_blank');
+						openImageModal(f.url, f.name || `Imagen ${idx + 1}`);
 					};
 					
 					img.onerror = function() {
@@ -308,7 +310,7 @@ function displayVouchers(vouchers) {
                     return `<img src="${f.url}" 
                                  alt="${f.name}" 
                                  style="width: 30px; height: 30px; object-fit: cover; border-radius: 4px; margin: 2px; cursor: pointer;" 
-                                 onclick="window.open('${f.url}', '_blank')"
+                                 onclick="openImageModal('${f.url}', '${f.name || `Archivo ${idx + 1}`}')"
                                  title="Clic para ver completa">`;
                 } else {
                     return `<a href="${f.url || '#'}" target="_blank" style="color: var(--color-primary); margin: 0 5px;">${f.name || `Archivo ${idx + 1}`}</a>`;
@@ -334,4 +336,35 @@ function displayVouchers(vouchers) {
     }).join('');
 }
 
+/**
+ * Abre el modal de imagen
+ */
+function openImageModal(imageUrl, imageName) {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalImageName = document.getElementById('modalImageName');
+    
+    modalImage.src = imageUrl;
+    modalImageName.textContent = imageName || 'Imagen';
+    modal.classList.add('show');
+    
+    // Cerrar modal al hacer clic fuera de la imagen
+    modal.onclick = function(event) {
+        if (event.target === modal) {
+            closeImageModal();
+        }
+    };
+}
+
+/**
+ * Cierra el modal de imagen
+ */
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    modal.classList.remove('show');
+}
+
+// Hacer las funciones globales para que puedan ser llamadas desde onclick
+window.openImageModal = openImageModal;
+window.closeImageModal = closeImageModal;
 
