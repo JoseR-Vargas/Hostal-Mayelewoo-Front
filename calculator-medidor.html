@@ -51,24 +51,22 @@
                     <!-- Mediciones -->
                     <div class="form-group measurement-input">
                         <label for="medicionAnterior">Medición del mes anterior *</label>
-                        <input type="number" 
+                        <input type="text" 
                                id="medicionAnterior" 
                                name="medicionAnterior" 
-                               step="0.1" 
                                inputmode="decimal"
-                               placeholder="Ej: 3565.3">
+                               placeholder="Ej: 3565.3 o 3565,3">
                         <span class="measurement-unit">kWh</span>
                         <div class="error-message">Ingrese la medición anterior</div>
                     </div>
 
                     <div class="form-group measurement-input">
                         <label for="medicionActual">Medición del mes actual *</label>
-                        <input type="number" 
+                        <input type="text" 
                                id="medicionActual" 
                                name="medicionActual" 
-                               step="0.1" 
                                inputmode="decimal"
-                               placeholder="Ej: 3625.2">
+                               placeholder="Ej: 3625.2 o 3625,2">
                         <span class="measurement-unit">kWh</span>
                         <div class="error-message">La medición actual debe ser mayor a la anterior</div>
                     </div>
@@ -83,7 +81,7 @@
                     <!-- Fotografías -->
                     <div class="photo-upload-container">
                         <div class="photo-upload-group" id="fotoAnteriorGroup">
-                            <h4>Foto del medidor - Mes anterior</h4>
+                            <h4>Foto del medidor - Mes anterior *</h4>
                             <p>Sube la foto de la medición anterior</p>
                             <div class="upload-buttons">
                                 <button type="button" class="upload-btn" onclick="openCamera('fotoAnterior')">
@@ -102,7 +100,7 @@
                         </div>
 
                         <div class="photo-upload-group" id="fotoActualGroup">
-                            <h4>Foto del medidor - Mes actual</h4>
+                            <h4>Foto del medidor - Mes actual *</h4>
                             <p>Sube la foto de la medición actual</p>
                             <div class="upload-buttons">
                                 <button type="button" class="upload-btn" onclick="openCamera('fotoActual')">

@@ -53,38 +53,36 @@ class MeterCalculator {
         decimalInputs.forEach(inputId => {
             const input = document.getElementById(inputId);
             
-            input.addEventListener('keypress', (e) => {
-                // Permitir números, punto, coma, backspace, delete, tab, escape, enter
-                const allowedKeys = [46, 8, 9, 27, 13, 110, 188, 190];
-                const isNumber = (e.keyCode >= 48 && e.keyCode <= 57) || 
-                               (e.keyCode >= 96 && e.keyCode <= 105);
+            // Validación en tiempo real
+            input.addEventListener('input', (e) => {
+                let value = e.target.value;
                 
-                if (!isNumber && !allowedKeys.includes(e.keyCode)) {
-                    e.preventDefault();
+                // Permitir solo números, punto y coma
+                value = value.replace(/[^0-9.,]/g, '');
+                
+                // Reemplazar múltiples puntos o comas
+                const hasDecimal = value.match(/[.,]/g);
+                if (hasDecimal && hasDecimal.length > 1) {
+                    // Mantener solo el primer separador decimal
+                    const firstSeparatorIndex = value.search(/[.,]/);
+                    value = value.slice(0, firstSeparatorIndex + 1) + 
+                           value.slice(firstSeparatorIndex + 1).replace(/[.,]/g, '');
                 }
                 
-                // Reemplazar coma por punto para cálculos
-                if (e.keyCode === 188) { // coma
-                    e.preventDefault();
-                    const cursorPosition = e.target.selectionStart;
-                    const currentValue = e.target.value;
-                    
-                    if (!currentValue.includes('.')) {
-                        e.target.value = currentValue.slice(0, cursorPosition) + '.' + 
-                                       currentValue.slice(cursorPosition);
-                        e.target.setSelectionRange(cursorPosition + 1, cursorPosition + 1);
-                    }
-                }
+                e.target.value = value;
+                this.calculatePreview();
             });
             
-            input.addEventListener('paste', (e) => {
-                e.preventDefault();
-                const paste = (e.clipboardData || window.clipboardData).getData('text');
-                const formattedPaste = paste.replace(',', '.');
-                
-                if (!isNaN(formattedPaste) && formattedPaste !== '') {
-                    e.target.value = formattedPaste;
-                    this.calculatePreview();
+            // Normalizar al perder el foco
+            input.addEventListener('blur', (e) => {
+                let value = e.target.value;
+                if (value) {
+                    // Reemplazar coma por punto para el valor normalizado
+                    value = value.replace(',', '.');
+                    // Validar que sea un número válido
+                    if (!isNaN(parseFloat(value))) {
+                        e.target.value = value;
+                    }
                 }
             });
         });
@@ -109,8 +107,12 @@ class MeterCalculator {
      * Valida que la medición actual sea mayor a la anterior
      */
     validateCurrentMeasurement() {
-        const anterior = parseFloat(document.getElementById('medicionAnterior').value) || 0;
-        const actual = parseFloat(document.getElementById('medicionActual').value) || 0;
+        // Normalizar valores (reemplazar coma por punto)
+        const anteriorValue = document.getElementById('medicionAnterior').value.replace(',', '.');
+        const actualValue = document.getElementById('medicionActual').value.replace(',', '.');
+        
+        const anterior = parseFloat(anteriorValue) || 0;
+        const actual = parseFloat(actualValue) || 0;
         const formGroup = document.getElementById('medicionActual').closest('.form-group');
         
         if (actual > 0 && anterior > 0 && actual <= anterior) {
@@ -126,15 +128,19 @@ class MeterCalculator {
      * Calcula y muestra la vista previa del consumo
      */
     calculatePreview() {
-        const anterior = parseFloat(document.getElementById('medicionAnterior').value) || 0;
-        const actual = parseFloat(document.getElementById('medicionActual').value) || 0;
+        // Obtener valores y normalizar (reemplazar coma por punto)
+        const anteriorValue = document.getElementById('medicionAnterior').value.replace(',', '.');
+        const actualValue = document.getElementById('medicionActual').value.replace(',', '.');
+        
+        const anterior = parseFloat(anteriorValue) || 0;
+        const actual = parseFloat(actualValue) || 0;
         
         if (anterior > 0 && actual > anterior) {
             const consumo = actual - anterior;
             const monto = consumo * this.PRICE_PER_KWH;
             
             document.getElementById('consumoCalculado').textContent = `${consumo.toFixed(1)} kWh`;
-            document.getElementById('montoAPagar').textContent = `$${monto.toFixed(2)}`;
+            document.getElementById('montoAPagar').textContent = `$${this.formatMoney(monto)}`;
             
             this.calculationPreview.classList.add('show');
         } else {
@@ -169,6 +175,13 @@ class MeterCalculator {
             preview.src = e.target.result;
             preview.style.display = 'block';
             group.classList.add('has-photo');
+            
+            // Limpiar error de foto si existe
+            group.classList.remove('error');
+            const errorElement = group.querySelector('.error-message');
+            if (errorElement) {
+                errorElement.style.display = 'none';
+            }
         };
         reader.readAsDataURL(file);
     }
@@ -228,6 +241,22 @@ class MeterCalculator {
             isValid = false;
         }
         
+        // Validar que ambas fotos estén cargadas
+        const fotoAnterior = document.getElementById('fotoAnterior').files[0];
+        const fotoActual = document.getElementById('fotoActual').files[0];
+        
+        if (!fotoAnterior) {
+            const formGroup = document.getElementById('fotoAnteriorGroup');
+            this.showPhotoError(formGroup, 'Debe cargar la foto del medidor del mes anterior');
+            isValid = false;
+        }
+        
+        if (!fotoActual) {
+            const formGroup = document.getElementById('fotoActualGroup');
+            this.showPhotoError(formGroup, 'Debe cargar la foto del medidor del mes actual');
+            isValid = false;
+        }
+        
         return isValid;
     }
 
@@ -243,18 +272,47 @@ class MeterCalculator {
     }
 
     /**
+     * Muestra error en un grupo de foto
+     */
+    showPhotoError(photoGroup, message) {
+        photoGroup.classList.add('error');
+        
+        // Crear mensaje de error si no existe
+        let errorElement = photoGroup.querySelector('.error-message');
+        if (!errorElement) {
+            errorElement = document.createElement('div');
+            errorElement.className = 'error-message';
+            errorElement.style.display = 'block';
+            errorElement.style.color = '#e74c3c';
+            errorElement.style.fontSize = '0.9rem';
+            errorElement.style.marginTop = '0.5rem';
+            photoGroup.appendChild(errorElement);
+        }
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+
+    /**
      * Limpia el error de un campo específico
      */
     clearFieldError(formGroup) {
         formGroup.classList.remove('error');
+        const errorElement = formGroup.querySelector('.error-message');
+        if (errorElement) {
+            errorElement.style.display = 'none';
+        }
     }
 
     /**
      * Recopila todos los datos del formulario
      */
     getFormData() {
-        const anterior = parseFloat(document.getElementById('medicionAnterior').value);
-        const actual = parseFloat(document.getElementById('medicionActual').value);
+        // Normalizar valores (reemplazar coma por punto)
+        const anteriorValue = document.getElementById('medicionAnterior').value.replace(',', '.');
+        const actualValue = document.getElementById('medicionActual').value.replace(',', '.');
+        
+        const anterior = parseFloat(anteriorValue);
+        const actual = parseFloat(actualValue);
         const consumo = actual - anterior;
         const montoTotal = consumo * this.PRICE_PER_KWH;
         
@@ -441,7 +499,7 @@ class MeterCalculator {
      * Muestra el modal de éxito con el resultado
      */
     showSuccessModal(amount) {
-        document.getElementById('modalAmount').textContent = `$${amount.toFixed(2)}`;
+        document.getElementById('modalAmount').textContent = `$${this.formatMoney(amount)}`;
         this.modal.classList.add('show');
         document.body.style.overflow = 'hidden';
     }
@@ -491,6 +549,17 @@ class MeterCalculator {
         } catch (error) {
             console.error('Error al cargar datos guardados:', error);
         }
+    }
+
+    /**
+     * Formatea un número como dinero con separador de miles (punto) y decimales (coma)
+     * Ejemplo: 17614.33 -> 17.614,33
+     */
+    formatMoney(amount) {
+        const fixed = amount.toFixed(2);
+        const parts = fixed.split('.');
+        const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        return `${integerPart},${parts[1]}`;
     }
 }
 
