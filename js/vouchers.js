@@ -1,6 +1,6 @@
 // Configuración y utilidades mínimas (YAGNI/DRY)
 const VOUCHERS_CONFIG = {
-	maxTotalUploadBytes: 10 * 1024 * 1024, // 10 MB
+	maxTotalUploadBytes: 50 * 1024 * 1024, // 50 MB (el backend comprime automáticamente con GridFS + Sharp)
 	apiBaseUrl: resolveApiBaseUrl()
 };
 
@@ -94,7 +94,7 @@ function validateVoucherForm(data, files) {
 			total += f.size;
 		}
 		if (total > VOUCHERS_CONFIG.maxTotalUploadBytes) {
-			errors.push('Las imágenes superan el tamaño total permitido (10 MB)');
+			errors.push('Las imágenes superan el tamaño total permitido (50 MB)');
 		}
 	}
 	return errors;
@@ -160,8 +160,12 @@ document.addEventListener('DOMContentLoaded', () => {
 			let total = 0;
 			for (const f of files) total += f.size;
 			if (total > VOUCHERS_CONFIG.maxTotalUploadBytes) {
-				showFormBanner(form, { type: 'error', text: 'Las imágenes superan 10 MB en total.' });
+				showFormBanner(form, { type: 'error', text: 'Las imágenes superan 50 MB en total. Por favor, selecciona menos imágenes.' });
 				fileInput.value = '';
+			} else if (files.length > 0) {
+				// Mensaje informativo de que las imágenes serán comprimidas
+				const filesText = files.length === 1 ? '1 imagen seleccionada' : `${files.length} imágenes seleccionadas`;
+				console.log(`${filesText}. Se comprimirán automáticamente en el servidor.`);
 			}
 		});
 	}

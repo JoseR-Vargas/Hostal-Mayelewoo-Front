@@ -460,8 +460,9 @@ class MeterCalculator {
                 
                 // Preguntar al usuario si quiere continuar
                 const continuar = confirm(
-                    'No se pudo conectar con el servidor. Los datos se guardaron localmente.\n\n' +
-                    '¿Desea continuar? (Los datos se sincronizarán cuando se restablezca la conexión)'
+                    'No se pudo procesar su solicitud. Intente nuevamente en unos minutos.\n\n' +
+                    'Los datos se guardaron localmente y se sincronizarán cuando se restablezca la conexión.\n\n' +
+                    '¿Desea continuar?'
                 );
                 
                 if (continuar) {

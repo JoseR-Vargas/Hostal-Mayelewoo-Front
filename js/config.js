@@ -10,7 +10,7 @@ const CONFIG = {
     // URL del API - Cambiar según el entorno
     // Si estás usando Live Server (puerto 5500) o abriendo el archivo directamente
     // Detectar entorno automáticamente
-    API_URL: window.location.hostname === 'localhost' 
+    API_URL: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? 'http://localhost:3000'  // URL del backend local
         : 'https://mayelewoo-back.onrender.com',  // URL de producción
 
@@ -32,7 +32,8 @@ window.APP_CONFIG = CONFIG;
 window.API_URL = CONFIG.API_URL;
 
 // Log de configuración (para debugging en todos los entornos)
-const environment = window.location.hostname === 'localhost' ? 'DESARROLLO' : 'PRODUCCIÓN';
+const environment = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'DESARROLLO' : 'PRODUCCIÓN';
 console.log(`🔧 Entorno: ${environment}`);
+console.log(`🔧 Hostname detectado: ${window.location.hostname}`);
 console.log('🔧 Configuración cargada:', CONFIG);
 console.log(`📡 API URL: ${CONFIG.API_URL}`);
