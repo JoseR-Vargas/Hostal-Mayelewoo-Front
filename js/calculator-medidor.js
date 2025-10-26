@@ -491,7 +491,7 @@ class MeterCalculator {
             this.submitBtn.disabled = true;
         } else {
             this.submitBtn.classList.remove('processing');
-            this.submitBtn.textContent = 'Calcular y Enviar';
+            this.submitBtn.textContent = 'Enviar';
             this.submitBtn.disabled = false;
         }
     }
