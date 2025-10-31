@@ -137,10 +137,8 @@ class MeterCalculator {
         
         if (anterior > 0 && actual > anterior) {
             const consumo = actual - anterior;
-            const monto = consumo * this.PRICE_PER_KWH;
             
             document.getElementById('consumoCalculado').textContent = `${consumo.toFixed(1)} kWh`;
-            document.getElementById('montoAPagar').textContent = `$${this.formatMoney(monto)}`;
             
             this.calculationPreview.classList.add('show');
         } else {
@@ -447,7 +445,7 @@ class MeterCalculator {
                     // Si se envía correctamente al servidor, también guardamos en localStorage
                     this.saveToLocalStorage(formData);
                     
-                    this.showSuccessModal(formData.montoTotal);
+                    this.showSuccessModal(formData.consumoCalculado);
                     this.resetForm();
                 } else {
                     throw new Error(response.message || 'Error al procesar los datos');
@@ -458,19 +456,12 @@ class MeterCalculator {
                 // Guardar en localStorage como backup
                 this.saveToLocalStorage(formData);
                 
-                // Preguntar al usuario si quiere continuar
-                const continuar = confirm(
-                    'No se pudo procesar su solicitud. Intente nuevamente en unos minutos.\n\n' +
-                    'Los datos se guardaron localmente y se sincronizarán cuando se restablezca la conexión.\n\n' +
-                    '¿Desea continuar?'
-                );
+                // Mostrar modal de éxito directamente ya que los datos están guardados localmente
+                // El usuario puede seguir usando la aplicación aunque el servidor no esté disponible
+                console.warn('⚠️ Datos guardados localmente. Se intentará sincronizar cuando el servidor esté disponible.');
                 
-                if (continuar) {
-                    this.showSuccessModal(formData.montoTotal);
-                    this.resetForm();
-                } else {
-                    throw serverError;
-                }
+                this.showSuccessModal(formData.consumoCalculado);
+                this.resetForm();
             }
             
         } catch (error) {
@@ -499,8 +490,8 @@ class MeterCalculator {
     /**
      * Muestra el modal de éxito con el resultado
      */
-    showSuccessModal(amount) {
-        document.getElementById('modalAmount').textContent = `$${this.formatMoney(amount)}`;
+    showSuccessModal(consumo) {
+        document.getElementById('modalAmount').textContent = `${consumo.toFixed(1)} kWh`;
         this.modal.classList.add('show');
         document.body.style.overflow = 'hidden';
     }
