@@ -129,7 +129,10 @@ class UIService {
         const totalRegistros = calculos.length;
         const totalConsumo = calculos.reduce((sum, c) => sum + c.consumoCalculado, 0);
         const totalMonto = calculos.reduce((sum, c) => sum + c.montoTotal, 0);
-        const promedioConsumo = totalRegistros > 0 ? (totalConsumo / totalRegistros).toFixed(2) : 0;
+        
+        // Dividir consumos entre 10 para mostrar correctamente
+        const totalConsumoDisplay = (totalConsumo / 10).toFixed(1);
+        const promedioConsumo = totalRegistros > 0 ? ((totalConsumo / 10) / totalRegistros).toFixed(1) : 0;
 
         const metricsHTML = `
             <div class="metric-card">
@@ -138,11 +141,7 @@ class UIService {
             </div>
             <div class="metric-card">
                 <h4 class="metric-title">Consumo Total</h4>
-                <p class="metric-value">${totalConsumo.toFixed(2)} kWh</p>
-            </div>
-            <div class="metric-card">
-                <h4 class="metric-title">Monto Total</h4>
-                <p class="metric-value">$${totalMonto.toFixed(2)}</p>
+                <p class="metric-value">${totalConsumoDisplay} kWh</p>
             </div>
             <div class="metric-card">
                 <h4 class="metric-title">Promedio Consumo</h4>
@@ -171,6 +170,11 @@ class UIService {
         const fecha = new Date(calculo.fechaRegistro).toLocaleDateString('es-AR');
         const hasFotoAnterior = calculo.fotoAnteriorData && calculo.fotoAnteriorData.filename;
         const hasFotoActual = calculo.fotoActualData && calculo.fotoActualData.filename;
+        
+        // Dividir las mediciones entre 10 para mostrar correctamente
+        const medicionAnteriorDisplay = (calculo.medicionAnterior / 10).toFixed(1);
+        const medicionActualDisplay = (calculo.medicionActual / 10).toFixed(1);
+        const consumoDisplay = (calculo.consumoCalculado / 10).toFixed(1);
 
         return `
             <tr>
@@ -178,10 +182,10 @@ class UIService {
                 <td>${this.escapeHtml(calculo.apellido)}</td>
                 <td>${this.escapeHtml(calculo.dni)}</td>
                 <td>${this.escapeHtml(calculo.habitacion)}</td>
-                <td>${calculo.medicionAnterior.toFixed(2)}</td>
-                <td>${calculo.medicionActual.toFixed(2)}</td>
-                <td class="consumo-cell">${calculo.consumoCalculado.toFixed(2)}</td>
-                <td><strong>$${calculo.montoTotal.toFixed(2)}</strong></td>
+                <td>${medicionAnteriorDisplay}</td>
+                <td>${medicionActualDisplay}</td>
+                <td class="consumo-cell">${consumoDisplay}</td>
+                <!-- <td><strong>$${calculo.montoTotal.toFixed(2)}</strong></td> -->
                 <td>${fecha}</td>
                 <td>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">

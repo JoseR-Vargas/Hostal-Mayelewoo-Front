@@ -77,15 +77,44 @@ class MeterCalculator {
             input.addEventListener('blur', (e) => {
                 let value = e.target.value;
                 if (value) {
-                    // Reemplazar coma por punto para el valor normalizado
-                    value = value.replace(',', '.');
-                    // Validar que sea un número válido
-                    if (!isNaN(parseFloat(value))) {
-                        e.target.value = value;
-                    }
+                    // Normalizar el valor automáticamente
+                    const normalized = this.normalizeMeasurement(value);
+                    e.target.value = normalized;
+                    this.calculatePreview();
                 }
             });
         });
+    }
+
+    /**
+     * Normaliza la medición: si es un entero sin punto/coma, inserta el punto decimal antes del último dígito
+     * Ejemplos:
+     * - "35659" -> "3565.9"
+     * - "38773" -> "3877.3"
+     * - "3565.9" -> "3565.9" (sin cambios)
+     * - "3565,9" -> "3565.9" (cambia coma por punto)
+     */
+    normalizeMeasurement(value) {
+        if (!value) return value;
+        
+        // Limpiar espacios
+        value = value.trim();
+        
+        // Si ya tiene punto o coma, solo reemplazar coma por punto
+        if (value.includes('.') || value.includes(',')) {
+            return value.replace(',', '.');
+        }
+        
+        // Si es un número entero sin separador decimal
+        // Insertar el punto antes del último dígito
+        if (/^\d+$/.test(value) && value.length > 1) {
+            // Insertar punto antes del último dígito
+            const insertPosition = value.length - 1;
+            const normalized = value.slice(0, insertPosition) + '.' + value.slice(insertPosition);
+            return normalized;
+        }
+        
+        return value;
     }
 
     /**
@@ -107,9 +136,9 @@ class MeterCalculator {
      * Valida que la medición actual sea mayor a la anterior
      */
     validateCurrentMeasurement() {
-        // Normalizar valores (reemplazar coma por punto)
-        const anteriorValue = document.getElementById('medicionAnterior').value.replace(',', '.');
-        const actualValue = document.getElementById('medicionActual').value.replace(',', '.');
+        // Normalizar valores (aplicar la normalización automática)
+        const anteriorValue = this.normalizeMeasurement(document.getElementById('medicionAnterior').value);
+        const actualValue = this.normalizeMeasurement(document.getElementById('medicionActual').value);
         
         const anterior = parseFloat(anteriorValue) || 0;
         const actual = parseFloat(actualValue) || 0;
@@ -128,9 +157,9 @@ class MeterCalculator {
      * Calcula y muestra la vista previa del consumo
      */
     calculatePreview() {
-        // Obtener valores y normalizar (reemplazar coma por punto)
-        const anteriorValue = document.getElementById('medicionAnterior').value.replace(',', '.');
-        const actualValue = document.getElementById('medicionActual').value.replace(',', '.');
+        // Obtener valores y normalizar (aplicar la normalización automática)
+        const anteriorValue = this.normalizeMeasurement(document.getElementById('medicionAnterior').value);
+        const actualValue = this.normalizeMeasurement(document.getElementById('medicionActual').value);
         
         const anterior = parseFloat(anteriorValue) || 0;
         const actual = parseFloat(actualValue) || 0;
@@ -305,9 +334,9 @@ class MeterCalculator {
      * Recopila todos los datos del formulario
      */
     getFormData() {
-        // Normalizar valores (reemplazar coma por punto)
-        const anteriorValue = document.getElementById('medicionAnterior').value.replace(',', '.');
-        const actualValue = document.getElementById('medicionActual').value.replace(',', '.');
+        // Normalizar valores (aplicar la normalización automática)
+        const anteriorValue = this.normalizeMeasurement(document.getElementById('medicionAnterior').value);
+        const actualValue = this.normalizeMeasurement(document.getElementById('medicionActual').value);
         
         const anterior = parseFloat(anteriorValue);
         const actual = parseFloat(actualValue);
