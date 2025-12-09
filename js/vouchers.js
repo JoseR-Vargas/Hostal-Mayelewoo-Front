@@ -79,7 +79,24 @@ function validateVoucherForm(data, files) {
 	if (data.email && !isValidEmail(data.email)) errors.push('El correo electrónico no es válido');
 	if (!data.ref4 || !/^\d{4}$/.test(data.ref4)) errors.push('Los últimos 4 dígitos deben ser numéricos');
 	if (!data.hab) errors.push('El número de habitación/apartamento es requerido');
-	if (!data.monto) errors.push('El monto depositado es requerido');
+	if (!data.monto) {
+		errors.push('El monto depositado es requerido');
+	} else {
+		// Validar formato del monto (debe tener punto como separador de miles)
+		// Ejemplo: 10.000, 1.000, 20.000
+		const montoSinComa = data.monto.replace(',', '.');
+		const montoNumerico = parseFloat(montoSinComa.replace(/\./g, ''));
+		
+		// Validar que el monto tenga al menos 4 dígitos (mínimo 1.000)
+		if (montoNumerico < 1000) {
+			errors.push('Por favor, coloque el monto completo (ejemplo: 50.000, 100.000, 200.000)');
+		}
+		
+		// Validar que el formato tenga punto como separador de miles
+		if (!/^\d{1,3}(\.\d{3})*(,\d{1,2})?$/.test(data.monto)) {
+			errors.push('El monto debe estar en formato correcto con separador de miles. Ejemplo: 1.000, 10.000, 20.000');
+		}
+	}
 
 	// Validación de archivos (galería de imágenes)
 	if (!files || files.length === 0) {
