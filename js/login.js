@@ -23,6 +23,7 @@ const CONFIG = {
 // Clase para manejar autenticación
 class AuthManager {
     constructor() {
+        this.slowLoginTimer = null;
         this.init();
     }
 
@@ -33,6 +34,8 @@ class AuthManager {
             return;
         }
 
+        // Calentar el backend para evitar la tardanza inicial
+        this.prewarmBackend();
         this.setupLoginForm();
     }
 
@@ -110,12 +113,30 @@ class AuthManager {
         return { isValid: true };
     }
 
+    async prewarmBackend() {
+        const baseUrl = CONFIG.API_BASE_URL.replace(/\/api$/, '');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+        try {
+            await fetch(`${baseUrl}/health`, { signal: controller.signal, cache: 'no-store' });
+            console.info('✅ Backend listo');
+        } catch (error) {
+            console.info('ℹ️ No se pudo precalentar el backend (se intentará al iniciar sesión):', error.message);
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
+
     isValidEmail(email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     }
 
     async authenticate(credentials) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+
         try {
             console.log('🔐 Intentando autenticar con:', credentials.email);
             console.log('🔗 URL del backend:', `${CONFIG.API_BASE_URL}/auth/login`);
@@ -125,7 +146,8 @@ class AuthManager {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(credentials)
+                body: JSON.stringify(credentials),
+                signal: controller.signal
             });
 
             console.log('📡 Respuesta del servidor:', response.status, response.statusText);
@@ -153,8 +175,9 @@ class AuthManager {
             console.error('💬 Mensaje:', error.message);
             
             let errorMessage = 'Error de conexión con el servidor';
-            
-            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            if (error.name === 'AbortError') {
+                errorMessage = 'El servidor está tardando en responder. Intenta nuevamente en unos segundos.';
+            } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
                 errorMessage = 'No se puede conectar al servidor. Verifica tu conexión a internet.';
             } else if (error.name === 'SyntaxError') {
                 errorMessage = 'Respuesta inválida del servidor';
@@ -164,6 +187,8 @@ class AuthManager {
                 success: false,
                 message: errorMessage
             };
+        } finally {
+            clearTimeout(timeoutId);
         }
     }
 
@@ -235,10 +260,22 @@ class AuthManager {
             btn.disabled = true;
             spinner.style.display = 'inline-block';
             text.textContent = 'Iniciando sesión...';
+            this.clearSlowLoginTimer();
+            this.slowLoginTimer = setTimeout(() => {
+                text.textContent = 'Esperando respuesta del servidor...';
+            }, 4500);
         } else {
             btn.disabled = false;
             spinner.style.display = 'none';
             text.textContent = 'Iniciar Sesión';
+            this.clearSlowLoginTimer();
+        }
+    }
+
+    clearSlowLoginTimer() {
+        if (this.slowLoginTimer) {
+            clearTimeout(this.slowLoginTimer);
+            this.slowLoginTimer = null;
         }
     }
 
