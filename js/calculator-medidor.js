@@ -73,17 +73,47 @@ class MeterCalculator {
                 this.calculatePreview();
             });
             
-            // Normalizar al perder el foco
+            // Validar formato al perder el foco
             input.addEventListener('blur', (e) => {
                 let value = e.target.value;
+                const formGroup = input.closest('.form-group');
+                
                 if (value) {
-                    // Normalizar el valor automáticamente
+                    // Validar formato: mínimo 4 dígitos + punto/coma + 1 dígito
+                    if (!this.validateMeasurementFormat(value)) {
+                        this.showFieldError(formGroup, 'Formato requerido: mínimo 4 dígitos, punto o coma, y 1 decimal (Ej: 0035.3 o 3565,2)');
+                        return;
+                    }
+                    
+                    // Si el formato es válido, normalizar el valor
                     const normalized = this.normalizeMeasurement(value);
                     e.target.value = normalized;
+                    this.clearFieldError(formGroup);
                     this.calculatePreview();
+                } else {
+                    this.clearFieldError(formGroup);
                 }
             });
         });
+    }
+
+    /**
+     * Valida que el formato de medición sea correcto: mínimo 4 dígitos + punto/coma + 1 dígito
+     * Ejemplos válidos: 0035.3, 003565,2, 1234.5
+     * Ejemplos inválidos: 197.2, 35.3, 12345 (sin decimal)
+     */
+    validateMeasurementFormat(value) {
+        if (!value) return false;
+        
+        value = value.trim();
+        
+        // Patrón: mínimo 4 dígitos + punto o coma + al menos 1 dígito
+        // ^\d{4,} = al menos 4 dígitos al inicio
+        // [.,] = punto o coma
+        // \d+ = al menos un dígito decimal
+        const pattern = /^\d{4,}[.,]\d+$/;
+        
+        return pattern.test(value);
     }
 
     /**
@@ -248,6 +278,18 @@ class MeterCalculator {
             const field = document.getElementById(fieldId);
             const value = field.value.trim();
             const formGroup = field.closest('.form-group');
+            
+            // Para campos de medición, validar formato específico
+            if (fieldId === 'medicionAnterior' || fieldId === 'medicionActual') {
+                if (!value) {
+                    this.showFieldError(formGroup, `Este campo es requerido`);
+                    isValid = false;
+                } else if (!this.validateMeasurementFormat(value)) {
+                    this.showFieldError(formGroup, 'Formato requerido: mínimo 4 dígitos, punto o coma, y 1 decimal (Ej: 0035.3 o 3565,2)');
+                    isValid = false;
+                }
+                return;
+            }
             
             if (!value) {
                 this.showFieldError(formGroup, `Este campo es requerido`);
