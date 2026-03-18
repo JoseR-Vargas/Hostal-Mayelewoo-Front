@@ -42,6 +42,9 @@ class AppState {
             habitacion: '',
             dni: ''
         };
+        const now = new Date();
+        this.currentMonth = now.getMonth();
+        this.currentYear = now.getFullYear();
     }
 
     setCalculos(calculos) {
@@ -59,13 +62,32 @@ class AppState {
         this.applyFilters();
     }
 
+    changeMonth(delta) {
+        this.currentMonth += delta;
+        if (this.currentMonth > 11) {
+            this.currentMonth = 0;
+            this.currentYear++;
+        } else if (this.currentMonth < 0) {
+            this.currentMonth = 11;
+            this.currentYear--;
+        }
+        this.applyFilters();
+    }
+
+    getMonthLabel() {
+        const date = new Date(this.currentYear, this.currentMonth);
+        return date.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+    }
+
     applyFilters() {
         this.filteredCalculos = this.allCalculos.filter(calculo => {
+            const fecha = new Date(calculo.fechaRegistro);
+            const matchMonth = fecha.getMonth() === this.currentMonth && fecha.getFullYear() === this.currentYear;
             const matchHabitacion = !this.currentFilter.habitacion || 
                                   calculo.habitacion === this.currentFilter.habitacion;
             const matchDNI = !this.currentFilter.dni || 
                            calculo.dni.includes(this.currentFilter.dni);
-            return matchHabitacion && matchDNI;
+            return matchMonth && matchHabitacion && matchDNI;
         });
     }
 
@@ -222,6 +244,11 @@ class UIService {
         return String(text).replace(/[&<>"']/g, m => map[m]);
     }
 
+    static renderMonthLabel(label) {
+        const el = document.getElementById('currentMonthLabel');
+        if (el) el.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+    }
+
     static populateHabitacionFilter(calculos) {
         const select = document.getElementById('filterHabitacion');
         if (!select) return; // Elemento no existe en el DOM
@@ -292,6 +319,7 @@ class DashboardController {
         const calculos = appState.getFilteredCalculos();
         UIService.renderMetrics(calculos);
         UIService.renderTable(calculos);
+        UIService.renderMonthLabel(appState.getMonthLabel());
         UIService.populateHabitacionFilter(appState.getAllCalculos());
     }
 
@@ -347,6 +375,11 @@ function openImageModal(calculoId, tipo, title) {
 
 function closeImageModal() {
     ImageModalController.close();
+}
+
+function changeMonth(delta) {
+    appState.changeMonth(delta);
+    DashboardController.render();
 }
 
 // ============================================
