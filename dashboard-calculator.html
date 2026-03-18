@@ -33,8 +33,15 @@
 
 
 
+			<!-- Paginado por mes -->
+			<div class="month-pagination">
+				<button class="month-nav-btn" id="prevMonth" onclick="changeMonth(-1)">←</button>
+				<span class="month-label" id="currentMonthLabel"></span>
+				<button class="month-nav-btn" id="nextMonth" onclick="changeMonth(1)">→</button>
+			</div>
+
 			<!-- Tabla de datos -->
-			<h4 class="section-subtitle">Registros de Cálculos</h4>
+			<h4 class="section-subtitle">Registro de cálculos</h4>
 			<div class="table-container">
 				<table class="data-table" id="calculatorTable">
 					<thead>
