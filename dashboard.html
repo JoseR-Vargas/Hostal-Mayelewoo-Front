@@ -28,6 +28,13 @@
 		<h3 class="section-title">Dashboard Administrativo</h3>
 		<p class="contact-subtitle">Gestión de datos de usuarios</p>
 
+		<!-- Paginado por mes -->
+			<div class="month-pagination">
+				<button class="month-nav-btn" id="prevMonth" onclick="changeMonth(-1)">←</button>
+				<span class="month-label" id="currentMonthLabel"></span>
+				<button class="month-nav-btn" id="nextMonth" onclick="changeMonth(1)">→</button>
+			</div>
+
 		<h4 class="section-subtitle">Datos de Usuarios Registrados</h4>
 			<div class="table-container">
 				<table class="data-table" id="voucherTable">

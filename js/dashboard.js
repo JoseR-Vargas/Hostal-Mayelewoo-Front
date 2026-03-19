@@ -9,6 +9,39 @@ const DASHBOARD_CONFIG = {
 	apiBaseUrl: resolveApiBaseUrl()
 };
 
+// Estado de paginación por mes
+const monthState = {
+	currentMonth: new Date().getMonth(),
+	currentYear: new Date().getFullYear(),
+	allVouchers: [],
+
+	changeMonth(delta) {
+		this.currentMonth += delta;
+		if (this.currentMonth > 11) {
+			this.currentMonth = 0;
+			this.currentYear++;
+		} else if (this.currentMonth < 0) {
+			this.currentMonth = 11;
+			this.currentYear--;
+		}
+	},
+
+	getMonthLabel() {
+		const date = new Date(this.currentYear, this.currentMonth);
+		const label = date.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+		return label.charAt(0).toUpperCase() + label.slice(1);
+	},
+
+	getFilteredVouchers() {
+		return this.allVouchers.filter(v => {
+			const dateStr = v.timestamp || v.createdAt || v.fechaHora;
+			if (!dateStr) return false;
+			const fecha = new Date(dateStr);
+			return fecha.getMonth() === this.currentMonth && fecha.getFullYear() === this.currentYear;
+		});
+	}
+};
+
 function resolveApiBaseUrl() {
 	const { hostname, protocol } = window.location;
 	const params = new URLSearchParams(window.location.search);
@@ -127,15 +160,25 @@ async function renderDashboard() {
 		});
 	});
 
-	// Métricas
-	renderMetrics(vouchers);
-
-	// Tabla - FORZAR que use renderTable
-	console.log('Rendering table with', vouchers.length, 'vouchers');
-	renderTable(vouchers);
+	// Guardar todos los vouchers y renderizar mes actual
+	monthState.allVouchers = vouchers;
+	renderMonthView();
 }
 
 document.addEventListener('DOMContentLoaded', renderDashboard);
+
+function renderMonthView() {
+	const filtered = monthState.getFilteredVouchers();
+	const label = document.getElementById('currentMonthLabel');
+	if (label) label.textContent = monthState.getMonthLabel();
+	renderMetrics(filtered);
+	renderTable(filtered);
+}
+
+function changeMonth(delta) {
+	monthState.changeMonth(delta);
+	renderMonthView();
+}
 
 function renderMetrics(vouchers) {
 	const metrics = document.getElementById('metrics');
