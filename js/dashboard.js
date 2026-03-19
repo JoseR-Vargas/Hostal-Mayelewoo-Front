@@ -106,7 +106,7 @@ function createVoucherCard(voucher) {
 		['Ref 4 dígitos', voucher.ref4],
 		['Hab/Apto', voucher.hab],
 		['Monto', formatMoney(voucher.monto)],
-		['Fecha/Hora', voucher.timestamp || voucher.createdAt || '—']
+		['Fecha', (voucher.timestamp || voucher.createdAt) ? new Date(voucher.timestamp || voucher.createdAt).toLocaleDateString('es-AR') : '—']
 	];
 
 	rows.forEach(([label, value]) => {
@@ -218,7 +218,9 @@ function renderTable(vouchers) {
 		appendCell(tr, v.ref4 || '—', 'Ref 4');
 		appendCell(tr, v.hab || '—', 'Hab/Apto');
 		appendCell(tr, formatMoney(v.monto || '—'), 'Monto');
-		appendCell(tr, v.timestamp || v.createdAt || '—', 'Fecha/Hora');
+		const rawDate = v.timestamp || v.createdAt || '';
+		const fechaFormatted = rawDate ? new Date(rawDate).toLocaleDateString('es-AR') : '—';
+		appendCell(tr, fechaFormatted, 'Fecha');
 		const filesTd = document.createElement('td');
 		filesTd.setAttribute('data-label', 'Archivos');
 		// Normalizar: si no hay v.files pero sí v.fotos (backend crudo)

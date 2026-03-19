@@ -152,9 +152,8 @@ class UIService {
         const totalConsumo = calculos.reduce((sum, c) => sum + c.consumoCalculado, 0);
         const totalMonto = calculos.reduce((sum, c) => sum + c.montoTotal, 0);
         
-        // Dividir consumos entre 10 para mostrar correctamente
-        const totalConsumoDisplay = (totalConsumo / 10).toFixed(1);
-        const promedioConsumo = totalRegistros > 0 ? ((totalConsumo / 10) / totalRegistros).toFixed(1) : 0;
+        const totalConsumoDisplay = totalConsumo.toFixed(1);
+        const promedioConsumo = totalRegistros > 0 ? (totalConsumo / totalRegistros).toFixed(1) : 0;
 
         const metricsHTML = `
             <div class="metric-card">
@@ -193,10 +192,9 @@ class UIService {
         const hasFotoAnterior = calculo.fotoAnteriorData && calculo.fotoAnteriorData.filename;
         const hasFotoActual = calculo.fotoActualData && calculo.fotoActualData.filename;
         
-        // Dividir las mediciones entre 10 para mostrar correctamente
-        const medicionAnteriorDisplay = (calculo.medicionAnterior / 10).toFixed(1);
-        const medicionActualDisplay = (calculo.medicionActual / 10).toFixed(1);
-        const consumoDisplay = (calculo.consumoCalculado / 10).toFixed(1);
+        const medicionAnteriorDisplay = calculo.medicionAnterior.toFixed(1);
+        const medicionActualDisplay = calculo.medicionActual.toFixed(1);
+        const consumoDisplay = calculo.consumoCalculado.toFixed(1);
 
         return `
             <tr>
