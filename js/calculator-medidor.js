@@ -81,7 +81,7 @@ class MeterCalculator {
                 if (value) {
                     // Validar formato: mínimo 4 dígitos + punto/coma + 1 dígito
                     if (!this.validateMeasurementFormat(value)) {
-                        this.showFieldError(formGroup, 'Formato requerido: mínimo 4 dígitos, punto o coma, y 1 decimal (Ej: 0035.3 o 3565,2)');
+                        this.showFieldError(formGroup, 'Formato requerido: número con punto o coma decimal (Ej: 408.7 o 0035,3)');
                         return;
                     }
                     
@@ -98,20 +98,16 @@ class MeterCalculator {
     }
 
     /**
-     * Valida que el formato de medición sea correcto: mínimo 4 dígitos + punto/coma + 1 dígito
-     * Ejemplos válidos: 0035.3, 003565,2, 1234.5
-     * Ejemplos inválidos: 197.2, 35.3, 12345 (sin decimal)
+     * Valida que el formato de medición sea correcto: dígitos + punto/coma + dígitos decimales
+     * Ejemplos válidos: 0035.3, 003565,2, 1234.5, 408.7, 00408,7
      */
     validateMeasurementFormat(value) {
         if (!value) return false;
         
         value = value.trim();
         
-        // Patrón: mínimo 4 dígitos + punto o coma + al menos 1 dígito
-        // ^\d{4,} = al menos 4 dígitos al inicio
-        // [.,] = punto o coma
-        // \d+ = al menos un dígito decimal
-        const pattern = /^\d{4,}[.,]\d+$/;
+        // Patrón: al menos 1 dígito + punto o coma + al menos 1 dígito decimal
+        const pattern = /^\d+[.,]\d+$/;
         
         return pattern.test(value);
     }
@@ -285,7 +281,7 @@ class MeterCalculator {
                     this.showFieldError(formGroup, `Este campo es requerido`);
                     isValid = false;
                 } else if (!this.validateMeasurementFormat(value)) {
-                    this.showFieldError(formGroup, 'Formato requerido: mínimo 4 dígitos, punto o coma, y 1 decimal (Ej: 0035.3 o 3565,2)');
+                    this.showFieldError(formGroup, 'Formato requerido: número con punto o coma decimal (Ej: 408.7 o 0035,3)');
                     isValid = false;
                 }
                 return;
