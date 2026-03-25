@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<title>Calcular Pago Electricidad - Hostal Mayelewoo</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+	<header class="header">
+		<div class="container">
+			<div class="nav nav-centered">
+				<h1 class="logo">Hostal Mayelewoo</h1>
+				<nav class="nav-menu">
+					<a href="dashboard.html" class="nav-link">📋 Vouchers</a>
+					<a href="dashboard-calculator.html" class="nav-link">🧮 Medidor</a>
+					<button onclick="logout()" class="logout-btn">Cerrar Sesión</button>
+				</nav>
+			</div>
+		</div>
+	</header>
+
+	<section class="contact page-top-offset">
+		<div class="container vouchers-center">
+			<h3 class="section-title">Calculadora de Pago de Electricidad</h3>
+			<p class="contact-subtitle">Calculá cuánto debe abonar cada residente según la factura del mes</p>
+
+			<div class="contact-form">
+
+				<!-- Paso 1: Datos de la factura -->
+				<h4 class="section-subtitle">Paso 1 — Datos de la factura</h4>
+				<div class="form-row">
+					<div class="form-group">
+						<label for="montoFactura">Monto de la Factura EPEC ($)</label>
+						<input
+							type="text"
+							id="montoFactura"
+							name="montoFactura"
+							inputmode="numeric"
+							placeholder="Ej: 15.000 o 200.000,50"
+							autocomplete="off">
+						<div class="error-message">Ingresá un monto válido mayor a cero</div>
+					</div>
+					<div class="form-group">
+						<label for="precioKwh">Precio por kWh ($)</label>
+						<input
+							type="text"
+							id="precioKwh"
+							name="precioKwh"
+							readonly
+							placeholder="—"
+							style="background: var(--bg-secondary, #f7f8fa); cursor: default;">
+					</div>
+				</div>
+
+				<div class="form-row">
+					<div class="form-group">
+						<label for="totalKwhFactura">Total kWh de la Factura</label>
+						<input
+							type="text"
+							id="totalKwhFactura"
+							name="totalKwhFactura"
+							inputmode="decimal"
+							placeholder="Ej: 450 o 450,5"
+							autocomplete="off">
+						<div class="error-message">Ingresá los kWh totales de la factura</div>
+					</div>
+					<div class="form-group" style="display: flex; align-items: flex-end;">
+						<button
+							type="button"
+							class="cta-button"
+							id="btnCalcularPrecio"
+							onclick="calcularPrecioKwh()"
+							style="width: 100%;">
+							Calcular Precio kWh
+						</button>
+					</div>
+				</div>
+
+				<hr style="border: none; border-top: 1px solid var(--color-border, #E2E8F0); margin: 1.5rem 0;">
+
+				<!-- Paso 2: Consumo del residente -->
+				<h4 class="section-subtitle">Paso 2 — Consumo del residente</h4>
+				<div class="form-row">
+					<div class="form-group">
+						<label for="consumoKwh">Consumo del Residente (kWh)</label>
+						<input
+							type="text"
+							id="consumoKwh"
+							name="consumoKwh"
+							inputmode="decimal"
+							placeholder="Ej: 45,2 (ver columna Consumo en Medidor)"
+							autocomplete="off">
+						<div class="error-message">Ingresá el consumo del residente</div>
+					</div>
+					<div class="form-group" style="display: flex; align-items: flex-end;">
+						<button
+							type="button"
+							class="cta-button"
+							id="btnCalcularTotal"
+							onclick="calcularTotal()"
+							style="width: 100%;">
+							Calcular Total a Pagar
+						</button>
+					</div>
+				</div>
+
+				<div class="form-row">
+					<div></div>
+					<div class="form-group">
+						<label for="totalAPagar">Total a Pagar ($)</label>
+						<input
+							type="text"
+							id="totalAPagar"
+							name="totalAPagar"
+							readonly
+							placeholder="—"
+							style="background: var(--bg-secondary, #f7f8fa); cursor: default; font-weight: 700; color: var(--color-primary, #2B6CB0);">
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</section>
+
+	<footer class="footer footer-centered">
+		<div class="container">
+			<div class="footer-bottom">
+				<p>&copy; 2024 Hostal Mayelewoo. Todos los derechos reservados.</p>
+			</div>
+		</div>
+	</footer>
+
+	<script src="js/config.js"></script>
+	<script src="js/login.js"></script>
+	<script src="js/calcular-pago.js"></script>
+</body>
+</html>
