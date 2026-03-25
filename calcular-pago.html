@@ -45,19 +45,6 @@
 						<div class="error-message">Ingresá un monto válido mayor a cero</div>
 					</div>
 					<div class="form-group">
-						<label for="precioKwh">Precio por kWh ($)</label>
-						<input
-							type="text"
-							id="precioKwh"
-							name="precioKwh"
-							readonly
-							placeholder="—"
-							style="background: var(--bg-secondary, #f7f8fa); cursor: default;">
-					</div>
-				</div>
-
-				<div class="form-row">
-					<div class="form-group">
 						<label for="totalKwhFactura">Total kWh de la Factura</label>
 						<input
 							type="text"
@@ -67,6 +54,19 @@
 							placeholder="Ej: 450 o 450,5"
 							autocomplete="off">
 						<div class="error-message">Ingresá los kWh totales de la factura</div>
+					</div>
+				</div>
+
+				<div class="form-row">
+					<div class="form-group">
+						<label for="precioKwh">Precio por kWh ($)</label>
+						<input
+							type="text"
+							id="precioKwh"
+							name="precioKwh"
+							readonly
+							placeholder="—"
+							style="background: var(--bg-secondary, #f7f8fa); cursor: default;">
 					</div>
 					<div class="form-group" style="display: flex; align-items: flex-end;">
 						<button
