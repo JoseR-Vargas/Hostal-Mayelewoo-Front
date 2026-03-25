@@ -25,6 +25,25 @@ const CONFIG = {
     
     // Configuración de timeout
     REQUEST_TIMEOUT: 30000, // 30 segundos
+
+    // Auth — migrado desde login.js para evitar redeclaración de CONFIG
+    API_BASE_URL: (() => {
+        const { hostname, protocol } = window.location;
+        const params = new URLSearchParams(window.location.search);
+        const backendOverride = params.get('backend');
+        if (backendOverride === 'local') {
+            return `${protocol}//localhost:3000/api`;
+        }
+        if (backendOverride && /^https?:\/\//i.test(backendOverride)) {
+            return backendOverride.replace(/\/$/, '') + '/api';
+        }
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return `${protocol}//${hostname}:3000/api`;
+        }
+        return 'https://mayelewoo-back.onrender.com/api';
+    })(),
+    STORAGE_KEY: 'mayelewoo_admin_token',
+    ADMIN_DASHBOARD: 'dashboard.html',
 };
 
 // Exponer configuración globalmente
