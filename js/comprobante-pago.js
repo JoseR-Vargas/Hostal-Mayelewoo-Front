@@ -68,6 +68,22 @@ class UIService {
         document.getElementById('fechaRecibo').value = today;
     }
 
+    static setupMontoInput() {
+        const input = document.getElementById('monto');
+        input.addEventListener('input', () => {
+            // Strip thousand separators, keep only digits and one comma
+            let clean = input.value.replace(/\./g, '').replace(/[^\d,]/g, '');
+
+            const commaIdx = clean.indexOf(',');
+            let intPart = commaIdx >= 0 ? clean.slice(0, commaIdx) : clean;
+            const decPart = commaIdx >= 0 ? clean.slice(commaIdx) : '';
+
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+            input.value = intPart + decPart;
+        });
+    }
+
     static clearErrors() {
         ['cliente', 'propiedad', 'periodo', 'fecha', 'monto'].forEach(field => {
             const group = document.getElementById(`group-${field}`);
@@ -116,7 +132,7 @@ class UIService {
 class PdfService {
     static async download(state) {
         const template = document.getElementById('pdfTemplate');
-        template.style.cssText = 'display: block; position: fixed; top: -9999px; left: 0; z-index: -1;';
+        template.style.cssText = 'display: block; position: absolute; top: 0; left: -9999px; z-index: -1;';
 
         // Esperar que el browser pinte los datos antes de capturar
         await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -146,6 +162,7 @@ class ComprobanteController {
     static init() {
         requireAuth();
         UIService.setDefaultDate();
+        UIService.setupMontoInput();
     }
 
     static async generate() {
