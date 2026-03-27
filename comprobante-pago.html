@@ -112,7 +112,7 @@
 	</section>
 
 	<!-- Plantilla PDF (oculta, se muestra temporalmente durante la generación) -->
-	<div id="pdfTemplate" style="display: none; position: fixed; left: -9999px; top: 0;">
+	<div id="pdfTemplate" style="display: none; position: absolute; top: 0; left: -9999px;">
 		<div style="
 			width: 210mm;
 			min-height: 257mm;
@@ -124,23 +124,37 @@
 			position: relative;
 			box-sizing: border-box;
 		">
-			<!-- Marca de agua PAGADO -->
+			<!-- Sello PAGADO -->
 			<div style="
 				position: absolute;
-				top: 50%;
-				left: 50%;
-				transform: translate(-50%, -50%) rotate(-30deg);
-				font-size: 90pt;
-				font-weight: 900;
-				letter-spacing: 10px;
-				color: rgba(0, 140, 0, 0.18);
-				border: 8px solid rgba(0, 140, 0, 0.18);
-				border-radius: 14px;
-				padding: 8px 24px;
+				top: 36mm;
+				right: 18mm;
+				width: 92px;
+				height: 92px;
+				border: 5px solid rgba(0, 130, 0, 0.48);
+				border-radius: 50%;
+				transform: rotate(-18deg);
 				pointer-events: none;
 				user-select: none;
-				white-space: nowrap;
-			">PAGADO</div>
+				box-sizing: border-box;
+			">
+				<div style="
+					position: absolute;
+					top: 5px; left: 5px; right: 5px; bottom: 5px;
+					border: 2px solid rgba(0, 130, 0, 0.48);
+					border-radius: 50%;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+				">
+					<span style="
+						font-size: 11pt;
+						font-weight: 900;
+						color: rgba(0, 130, 0, 0.52);
+						letter-spacing: 3px;
+					">PAGADO</span>
+				</div>
+			</div>
 
 			<!-- Encabezado -->
 			<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px;">
