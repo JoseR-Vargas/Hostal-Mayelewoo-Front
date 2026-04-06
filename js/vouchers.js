@@ -18,7 +18,7 @@ function resolveApiBaseUrl() {
 		return `${protocol}//${hostname}:3000`; // NestJS por defecto
 	}
 	// En producción, usar el backend desplegado en Render
-	return 'https://mayelewoo-back.onrender.com';
+	return 'https://hostal-mayelewoo-backend.vercel.app';
 }
 
 function isValidEmail(email) {
