@@ -12,7 +12,7 @@ const CONFIG = {
     // Detectar entorno automáticamente
     API_URL: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? 'http://localhost:3000'  // URL del backend local
-        : 'https://mayelewoo-back.onrender.com',  // URL de producción
+        : 'https://hostal-mayelewoo-backend.vercel.app',  // URL de producción
 
     
     // Otras configuraciones
@@ -40,7 +40,7 @@ const CONFIG = {
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
             return `${protocol}//${hostname}:3000/api`;
         }
-        return 'https://mayelewoo-back.onrender.com/api';
+        return 'https://hostal-mayelewoo-backend.vercel.app/api';
     })(),
     STORAGE_KEY: 'mayelewoo_admin_token',
     ADMIN_DASHBOARD: 'dashboard.html',
