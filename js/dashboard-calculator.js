@@ -18,7 +18,7 @@ function getApiBaseUrl() {
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
         return `${protocol}//${hostname}:3000`;
     }
-    return 'https://mayelewoo-back.onrender.com';
+    return 'https://hostal-mayelewoo-backend.vercel.app';
 }
 
 const API_BASE_URL = getApiBaseUrl();

@@ -459,7 +459,7 @@ class MeterCalculator {
         
         try {
             // Obtener la URL del API desde config.js
-            const API_URL = window.API_URL || window.APP_CONFIG?.API_URL || 'https://mayelewoo-back.onrender.com';
+            const API_URL = window.API_URL || window.APP_CONFIG?.API_URL || 'hhttps://hostal-mayelewoo-backend.vercel.app';
             
             console.log('📤 Enviando cálculo a:', `${API_URL}/api/calculos-medidor`);
             
@@ -681,7 +681,7 @@ window.MeterCalculatorUtils = {
             return { success: true, synced: 0 };
         }
         
-        const API_URL = window.API_URL || window.APP_CONFIG?.API_URL || 'https://mayelewoo-back.onrender.com';
+        const API_URL = window.API_URL || window.APP_CONFIG?.API_URL || 'https://hostal-mayelewoo-backend.vercel.app';
         let syncedCount = 0;
         const failedItems = [];
         

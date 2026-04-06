@@ -26,7 +26,7 @@ class DashboardMediciones {
             return `${protocol}//${hostname}:3000/api`;
         }
         // En producción, usar el backend desplegado en Render
-        return 'https://mayelewoo-back.onrender.com/api';
+        return 'https://hostal-mayelewoo-backend.vercel.app/api';
     }
 
     async init() {
