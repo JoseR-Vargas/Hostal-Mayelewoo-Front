@@ -1,4 +1,3 @@
-// Clase para manejar autenticación
 class AuthManager {
     constructor() {
         this.slowLoginTimer = null;
@@ -6,13 +5,10 @@ class AuthManager {
     }
 
     init() {
-        // Verificar si ya está logueado
         if (this.isAuthenticated() && this.isOnLoginPage()) {
             this.redirectToDashboard();
             return;
         }
-
-        // Calentar el backend para evitar la tardanza inicial
         this.prewarmBackend();
         this.setupLoginForm();
     }
@@ -30,10 +26,10 @@ class AuthManager {
 
     async handleLogin(event) {
         event.preventDefault();
-        
+
         const formData = this.getFormData();
         const validation = this.validateForm(formData);
-        
+
         if (!validation.isValid) {
             this.showError(validation.message);
             return;
@@ -44,7 +40,6 @@ class AuthManager {
 
         try {
             const response = await this.authenticate(formData);
-            
             if (response.success) {
                 this.saveToken(response.token);
                 this.redirectToDashboard();
@@ -68,144 +63,61 @@ class AuthManager {
 
     validateForm({ email, password }) {
         if (!email || !password) {
-            return {
-                isValid: false,
-                message: 'Todos los campos son obligatorios'
-            };
+            return { isValid: false, message: 'Todos los campos son obligatorios' };
         }
-
-        if (!this.isValidEmail(email)) {
-            return {
-                isValid: false,
-                message: 'Por favor ingresa un email válido'
-            };
+        if (!Validators.isEmail(email)) {
+            return { isValid: false, message: 'Por favor ingresá un email válido' };
         }
-
         if (password.length < 6) {
-            return {
-                isValid: false,
-                message: 'La contraseña debe tener al menos 6 caracteres'
-            };
+            return { isValid: false, message: 'La contraseña debe tener al menos 6 caracteres' };
         }
-
         return { isValid: true };
     }
 
     async prewarmBackend() {
         const baseUrl = CONFIG.API_BASE_URL.replace(/\/api$/, '');
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
-
+        const tid = setTimeout(() => controller.abort(), 4000);
         try {
             await fetch(`${baseUrl}/health`, { signal: controller.signal, cache: 'no-store' });
             console.info('✅ Backend listo');
         } catch (error) {
-            console.info('ℹ️ No se pudo precalentar el backend (se intentará al iniciar sesión):', error.message);
+            console.info('ℹ️ No se pudo precalentar el backend:', error.message);
         } finally {
-            clearTimeout(timeoutId);
+            clearTimeout(tid);
         }
-    }
-
-    isValidEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
     }
 
     async authenticate(credentials) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
-
+        const tid = setTimeout(() => controller.abort(), 12000);
         try {
-            console.log('🔐 Intentando autenticar con:', credentials.email);
-            console.log('🔗 URL del backend:', `${CONFIG.API_BASE_URL}/auth/login`);
-            
             const response = await fetch(`${CONFIG.API_BASE_URL}/auth/login`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(credentials),
                 signal: controller.signal
             });
 
-            console.log('📡 Respuesta del servidor:', response.status, response.statusText);
-
             const data = await response.json();
-            console.log('📊 Datos recibidos:', data);
 
             if (response.ok && data.success) {
-                console.log('✅ Login exitoso');
-                return {
-                    success: true,
-                    token: data.access_token,
-                    user: data.user
-                };
-            } else {
-                console.log('❌ Login falló:', data.message);
-                return {
-                    success: false,
-                    message: data.message || 'Error de autenticación'
-                };
+                return { success: true, token: data.access_token, user: data.user };
             }
+            return { success: false, message: data.message || 'Error de autenticación' };
         } catch (error) {
-            console.error('🚨 Error en la autenticación:', error);
-            console.error('🔍 Tipo de error:', error.name);
-            console.error('💬 Mensaje:', error.message);
-            
             let errorMessage = 'Error de conexión con el servidor';
             if (error.name === 'AbortError') {
                 errorMessage = 'El servidor está tardando en responder. Intenta nuevamente en unos segundos.';
             } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                errorMessage = 'No se puede conectar al servidor. Verifica tu conexión a internet.';
+                errorMessage = 'No se puede conectar al servidor. Verificá tu conexión a internet.';
             } else if (error.name === 'SyntaxError') {
                 errorMessage = 'Respuesta inválida del servidor';
             }
-            
-            return {
-                success: false,
-                message: errorMessage
-            };
+            return { success: false, message: errorMessage };
         } finally {
-            clearTimeout(timeoutId);
+            clearTimeout(tid);
         }
-    }
-
-    // Simulación temporal hasta conectar con backend
-    mockAuthentication({ email, password }) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // Credenciales hardcodeadas temporalmente
-                if (email === 'admin@mayelewoo.com' && password === 'admin123') {
-                    resolve({
-                        success: true,
-                        token: 'mock_jwt_token_' + Date.now(),
-                        user: { email, role: 'admin' }
-                    });
-                } else {
-                    resolve({
-                        success: false,
-                        message: 'Email o contraseña incorrectos'
-                    });
-                }
-            }, 1000); // Simular delay de red
-        });
-    }
-
-    // Método preparado para integración con backend
-    async callAuthAPI(credentials) {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/auth/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(credentials)
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        return await response.json();
     }
 
     saveToken(token) {
@@ -269,7 +181,6 @@ class AuthManager {
     }
 }
 
-// Función global para verificar autenticación en otras páginas
 function requireAuth() {
     const token = sessionStorage.getItem(CONFIG.STORAGE_KEY);
     if (!token) {
@@ -279,13 +190,11 @@ function requireAuth() {
     return true;
 }
 
-// Función global para logout
 function logout() {
-    const auth = new AuthManager();
-    auth.logout();
+    sessionStorage.removeItem(CONFIG.STORAGE_KEY);
+    window.location.href = 'login.html';
 }
 
-// Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     new AuthManager();
 });
