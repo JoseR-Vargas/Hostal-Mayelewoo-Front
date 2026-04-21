@@ -1,177 +1,94 @@
-/**
- * DASHBOARD CONTADORES LUZ - HOSTAL MAYELEWOO
- * Sistema simplificado para mostrar mediciones registradas
- * Aplicando principios: DRY, SOLID, YAGNI
- */
+if (!requireAuth()) throw new Error('Acceso no autorizado');
 
-// Verificar autenticación antes de cargar el dashboard
-if (!requireAuth()) {
-    // La función requireAuth ya redirecciona si no está autenticado
-    throw new Error('Acceso no autorizado');
+// ─── State ────────────────────────────────────────────────────────────────────
+
+class MedicionesState {
+    constructor() {
+        this.mediciones = [];
+    }
 }
 
-class DashboardMediciones {
-    constructor() {
-        this.apiUrl = this.getApiUrl();
-        this.mediciones = [];
-        this.init();
+const medicionesState = new MedicionesState();
+
+// ─── ApiService ───────────────────────────────────────────────────────────────
+
+class MedicionesApiService {
+    static async fetchMediciones() {
+        const res = await APIClient.request('/contadores', { headers: APIClient.authHeaders });
+        const data = await res.json();
+        return data.data || [];
+    }
+}
+
+// ─── UIService ────────────────────────────────────────────────────────────────
+
+class MedicionesUIService {
+    static showLoading(visible) {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) overlay.style.display = visible ? 'flex' : 'none';
     }
 
-    /**
-     * Obtiene la URL de la API según el entorno
-     */
-    getApiUrl() {
-        const { hostname, protocol } = window.location;
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            return `${protocol}//${hostname}:3000/api`;
-        }
-        // En producción, usar el backend desplegado en Render
-        return 'https://hostal-mayelewoo-backend.vercel.app/api';
-    }
-
-    async init() {
-        await this.cargarMediciones();
-    }
-
-    async cargarMediciones() {
-        try {
-            this.mostrarCarga(true);
-            
-            const response = await fetch(`${this.apiUrl}/contadores`);
-            if (response.ok) {
-                const data = await response.json();
-                this.mediciones = data.data || [];
-                console.log('Mediciones cargadas:', this.mediciones.length);
-                console.log('Primera medición:', this.mediciones[0]);
-            } else {
-                console.warn('Error al obtener mediciones, usando datos de ejemplo');
-                this.mediciones = this.obtenerDatosEjemplo();
-            }
-            
-            this.mostrarMediciones();
-            
-        } catch (error) {
-            console.error('Error de conexión:', error);
-            this.mediciones = this.obtenerDatosEjemplo();
-            this.mostrarMediciones();
-        } finally {
-            this.mostrarCarga(false);
-        }
-    }
-
-    obtenerDatosEjemplo() {
-        return [
-            {
-                habitacion: '101',
-                nombre: 'Ana',
-                apellidos: 'García López',
-                dni: '11223344',
-                numeroMedicion: '234.5',
-                fechaLectura: new Date('2025-09-06T10:30:00').toISOString(),
-                fotoMedidor: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNkI3MjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5Gb3RvIDEwMTwvdGV4dD4KPC9zdmc+'
-            },
-            {
-                habitacion: '102',
-                nombre: 'Carlos',
-                apellidos: 'Rodríguez Silva',
-                dni: '55667788',
-                numeroMedicion: '156.8',
-                fechaLectura: new Date('2025-09-06T14:15:00').toISOString(),
-                fotoMedidor: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRUZGNkZGIi8+Cjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjODg1NkYyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5Gb3RvIDEwMjwvdGV4dD4KPC9zdmc+'
-            },
-            {
-                habitacion: '201',
-                nombre: 'María',
-                apellidos: 'Fernández Torres',
-                dni: '99887766',
-                numeroMedicion: '189.3',
-                fechaLectura: new Date('2025-09-06T16:45:00').toISOString(),
-                fotoMedidor: null // Ejemplo sin foto
-            }
-        ];
-    }
-
-    mostrarMediciones() {
+    static renderMediciones(mediciones) {
         const tbody = document.getElementById('medicionesTableBody');
-        const noDataMessage = document.getElementById('noDataMessage');
-        
-        if (!this.mediciones.length) {
+        const noData = document.getElementById('noDataMessage');
+
+        if (!mediciones.length) {
             tbody.innerHTML = '';
-            noDataMessage.style.display = 'block';
+            noData.style.display = 'block';
             return;
         }
 
-        noDataMessage.style.display = 'none';
-        tbody.innerHTML = this.mediciones.map(medicion => {
-            let foto = medicion.fotoMedidor;
+        noData.style.display = 'none';
+        const apiBase = CONFIG.API_BASE_URL.replace(/\/api$/, '');
+
+        tbody.innerHTML = mediciones.map(m => {
+            let foto = m.fotoMedidor;
             if (foto && foto.startsWith('/')) {
-                // Normalizar URL relativa con api base (remover posible doble //)
-                foto = `${this.apiUrl.replace(/\/api$/, '')}${foto}`.replace(/([^:]\/)\/\//, '$1/');
+                foto = `${apiBase}${foto}`.replace(/([^:]\/)\/+/g, '$1');
             }
+            const fotoCell = foto
+                ? `<img src="${Sanitizer.escapeHtml(foto)}"
+                         alt="Foto medidor ${Sanitizer.escapeHtml(m.habitacion)}"
+                         class="foto-medidor-preview"
+                         onclick="this.classList.toggle('foto-ampliada')"
+                         title="Clic para ampliar"
+                         loading="lazy"
+                         onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=\\'sin-foto\\'>Imagen no disponible</span>')">`
+                : '<span class="sin-foto">Sin foto</span>';
+
             return `
             <tr>
-                <td>${medicion.habitacion}</td>
-                <td>${medicion.nombre} ${medicion.apellidos}</td>
-                <td>${medicion.dni}</td>
-                <td>${medicion.numeroMedicion || medicion.lecturaActual || 'N/A'}</td>
-                <td>
-                    ${foto ? 
-                        `<img src="${foto}" 
-                             alt="Foto medidor ${medicion.habitacion}" 
-                             class="foto-medidor-preview" 
-                             onclick="this.classList.toggle('foto-ampliada')"
-                             title="Clic para ampliar"
-                             loading="lazy"> `
-                        : '<span class="sin-foto">Sin foto</span>'}
-                </td>
-                <td>${this.formatearFecha(medicion.fechaLectura || medicion.createdAt)}</td>
-            </tr>
-        `}).join('');
+                <td>${Sanitizer.escapeHtml(m.habitacion)}</td>
+                <td>${Sanitizer.escapeHtml(m.nombre)} ${Sanitizer.escapeHtml(m.apellidos || '')}</td>
+                <td>${Sanitizer.escapeHtml(m.dni)}</td>
+                <td>${Sanitizer.escapeHtml(String(m.numeroMedicion || m.lecturaActual || 'N/A'))}</td>
+                <td>${fotoCell}</td>
+                <td>${DateFormatter.toLocalDate(m.fechaLectura || m.createdAt)}</td>
+            </tr>`;
+        }).join('');
     }
+}
 
-    setupImageErrorHandlers() {
-        const images = document.querySelectorAll('#medicionesTableBody img');
-        console.log('Configurando manejo de errores para', images.length, 'imágenes');
-        
-        images.forEach((img, index) => {
-            console.log(`Imagen ${index + 1}: ${img.src}`);
-            
-            // Remover handlers previos si existen
-            img.onload = null;
-            img.onerror = null;
-            
-            img.onload = function() {
-                console.log(`✅ Imagen ${index + 1} cargada correctamente:`, this.src);
-            };
-            
-            img.onerror = function() {
-                console.error(`❌ Error cargando imagen ${index + 1}:`, this.src);
-                this.style.display = 'none';
-                this.parentElement.innerHTML = '<span class="sin-foto">Imagen no disponible</span>';
-            };
-        });
-    }
+// ─── Controller ───────────────────────────────────────────────────────────────
 
-    formatearFecha(fechaISO) {
-        const fecha = new Date(fechaISO);
-        return fecha.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-
-    mostrarCarga(mostrar) {
-        const overlay = document.getElementById('loadingOverlay');
-        if (overlay) {
-            overlay.style.display = mostrar ? 'flex' : 'none';
+class MedicionesController {
+    static async init() {
+        MedicionesUIService.showLoading(true);
+        try {
+            const mediciones = await MedicionesApiService.fetchMediciones();
+            medicionesState.mediciones = mediciones;
+            MedicionesUIService.renderMediciones(mediciones);
+        } catch (error) {
+            console.error('Error de conexión:', error);
+            MedicionesUIService.renderMediciones([]);
+        } finally {
+            MedicionesUIService.showLoading(false);
         }
     }
 }
 
-// Inicializar cuando el DOM esté listo
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
 document.addEventListener('DOMContentLoaded', () => {
-    new DashboardMediciones();
+    MedicionesController.init();
 });

@@ -1,47 +1,21 @@
 /**
  * Dashboard Calculator - Hostal Mayelewoo
- * Gestión de cálculos de consumo eléctrico
  * Principios: DRY, SOLID, YAGNI
- * Diseño: 50% Mobile / 50% Desktop
  */
 
-// ============================================
-// CONFIGURACIÓN Y CONSTANTES
-// ============================================
-function getApiBaseUrl() {
-    // Usar la URL del config.js si está disponible
-    if (window.API_URL) return window.API_URL;
-    if (window.APP_CONFIG?.API_URL) return window.APP_CONFIG.API_URL;
-    
-    // Fallback: detectar automáticamente
-    const { hostname, protocol } = window.location;
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return `${protocol}//${hostname}:3000`;
-    }
-    return 'https://hostal-mayelewoo-backend.vercel.app';
-}
-
-const API_BASE_URL = getApiBaseUrl();
 const ENDPOINTS = {
-    CALCULOS: '/api/calculos-medidor',
-    FOTO_ANTERIOR: (id) => `/api/calculos-medidor/${id}/foto-anterior`,
-    FOTO_ACTUAL: (id) => `/api/calculos-medidor/${id}/foto-actual`,
+    CALCULOS: '/calculos-medidor',
+    FOTO_ANTERIOR: id => `/calculos-medidor/${id}/foto-anterior`,
+    FOTO_ACTUAL: id => `/calculos-medidor/${id}/foto-actual`,
 };
 
-// Log para debugging
-console.log('📊 Dashboard Calculator - API URL:', API_BASE_URL);
+// ─── State ────────────────────────────────────────────────────────────────────
 
-// ============================================
-// ESTADO DE LA APLICACIÓN (Single Source of Truth)
-// ============================================
 class AppState {
     constructor() {
         this.allCalculos = [];
         this.filteredCalculos = [];
-        this.currentFilter = {
-            habitacion: '',
-            dni: ''
-        };
+        this.currentFilter = { habitacion: '', dni: '' };
         const now = new Date();
         this.currentMonth = now.getMonth();
         this.currentYear = now.getFullYear();
@@ -64,70 +38,50 @@ class AppState {
 
     changeMonth(delta) {
         this.currentMonth += delta;
-        if (this.currentMonth > 11) {
-            this.currentMonth = 0;
-            this.currentYear++;
-        } else if (this.currentMonth < 0) {
-            this.currentMonth = 11;
-            this.currentYear--;
-        }
+        if (this.currentMonth > 11) { this.currentMonth = 0; this.currentYear++; }
+        else if (this.currentMonth < 0) { this.currentMonth = 11; this.currentYear--; }
         this.applyFilters();
     }
 
     getMonthLabel() {
-        const date = new Date(this.currentYear, this.currentMonth);
-        return date.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+        const label = new Date(this.currentYear, this.currentMonth)
+            .toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+        return label.charAt(0).toUpperCase() + label.slice(1);
     }
 
     applyFilters() {
         this.filteredCalculos = this.allCalculos.filter(calculo => {
             const fecha = new Date(calculo.fechaRegistro);
             const matchMonth = fecha.getMonth() === this.currentMonth && fecha.getFullYear() === this.currentYear;
-            const matchHabitacion = !this.currentFilter.habitacion || 
-                                  calculo.habitacion === this.currentFilter.habitacion;
-            const matchDNI = !this.currentFilter.dni || 
-                           calculo.dni.includes(this.currentFilter.dni);
+            const matchHabitacion = !this.currentFilter.habitacion ||
+                calculo.habitacion === this.currentFilter.habitacion;
+            const matchDNI = !this.currentFilter.dni ||
+                calculo.dni.includes(this.currentFilter.dni);
             return matchMonth && matchHabitacion && matchDNI;
         });
     }
 
-    getFilteredCalculos() {
-        return this.filteredCalculos;
-    }
-
-    getAllCalculos() {
-        return this.allCalculos;
-    }
+    getFilteredCalculos() { return this.filteredCalculos; }
+    getAllCalculos() { return this.allCalculos; }
 }
 
 const appState = new AppState();
 
-// ============================================
-// SERVICIO DE API (Abstracción de llamadas HTTP)
-// ============================================
+// ─── ApiService ───────────────────────────────────────────────────────────────
+
 class ApiService {
     static async fetchCalculos() {
-        try {
-            const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CALCULOS}`);
-            if (!response.ok) throw new Error('Error al obtener cálculos');
-            const data = await response.json();
-            return data.data || [];
-        } catch (error) {
-            console.error('Error en fetchCalculos:', error);
-            throw error;
-        }
+        const data = await APIClient.getJSON(ENDPOINTS.CALCULOS);
+        return data.data || [];
     }
 
     static getFotoUrl(id, tipo) {
-        return tipo === 'anterior' 
-            ? `${API_BASE_URL}${ENDPOINTS.FOTO_ANTERIOR(id)}`
-            : `${API_BASE_URL}${ENDPOINTS.FOTO_ACTUAL(id)}`;
+        return `${CONFIG.API_BASE_URL}${tipo === 'anterior' ? ENDPOINTS.FOTO_ANTERIOR(id) : ENDPOINTS.FOTO_ACTUAL(id)}`;
     }
 }
 
-// ============================================
-// SERVICIO DE UI (Responsabilidad única: Renderizado)
-// ============================================
+// ─── UIService ────────────────────────────────────────────────────────────────
+
 class UIService {
     static showLoading() {
         document.getElementById('loadingOverlay').style.display = 'flex';
@@ -148,81 +102,63 @@ class UIService {
     }
 
     static renderMetrics(calculos) {
-        const totalRegistros = calculos.length;
         const totalConsumo = calculos.reduce((sum, c) => sum + c.consumoCalculado, 0);
-        const totalMonto = calculos.reduce((sum, c) => sum + c.montoTotal, 0);
-        
-        const totalConsumoDisplay = totalConsumo.toFixed(1);
-        const promedioConsumo = totalRegistros > 0 ? (totalConsumo / totalRegistros).toFixed(1) : 0;
+        const promedio = calculos.length > 0 ? totalConsumo / calculos.length : 0;
 
-        const metricsHTML = `
+        document.getElementById('metricsCalculator').innerHTML = `
             <div class="metric-card">
                 <h4 class="metric-title">Total Registros</h4>
-                <p class="metric-value">${totalRegistros}</p>
+                <p class="metric-value">${calculos.length}</p>
             </div>
             <div class="metric-card">
                 <h4 class="metric-title">Consumo Total</h4>
-                <p class="metric-value">${totalConsumoDisplay} kWh</p>
+                <p class="metric-value">${totalConsumo.toFixed(1)} kWh</p>
             </div>
             <div class="metric-card">
                 <h4 class="metric-title">Promedio Consumo</h4>
-                <p class="metric-value">${promedioConsumo} kWh</p>
+                <p class="metric-value">${promedio.toFixed(1)} kWh</p>
             </div>
         `;
-
-        document.getElementById('metricsCalculator').innerHTML = metricsHTML;
     }
 
     static renderTable(calculos) {
         const tbody = document.getElementById('calculatorTableBody');
-        
-        if (calculos.length === 0) {
-            this.showNoData();
-            return;
-        }
-
+        if (calculos.length === 0) { this.showNoData(); return; }
         this.hideNoData();
-
-        const rows = calculos.map(calculo => this.createTableRow(calculo)).join('');
-        tbody.innerHTML = rows;
+        tbody.innerHTML = calculos.map(c => UIService.createTableRow(c)).join('');
     }
 
     static createTableRow(calculo) {
-        const fecha = new Date(calculo.fechaRegistro).toLocaleDateString('es-AR');
-        const hasFotoAnterior = calculo.fotoAnteriorData && calculo.fotoAnteriorData.filename;
-        const hasFotoActual = calculo.fotoActualData && calculo.fotoActualData.filename;
-        
-        const medicionAnteriorDisplay = calculo.medicionAnterior.toFixed(1);
-        const medicionActualDisplay = calculo.medicionActual.toFixed(1);
-        const consumoDisplay = calculo.consumoCalculado.toFixed(1);
+        const fecha = DateFormatter.toLocalDate(calculo.fechaRegistro);
+        const hasFotoAnterior = calculo.fotoAnteriorData?.filename;
+        const hasFotoActual = calculo.fotoActualData?.filename;
 
         return `
             <tr>
-                <td>${this.escapeHtml(calculo.nombre)}</td>
-                <td>${this.escapeHtml(calculo.apellido)}</td>
-                <td>${this.escapeHtml(calculo.dni)}</td>
-                <td>${this.escapeHtml(calculo.habitacion)}</td>
-                <td>${medicionAnteriorDisplay}</td>
-                <td>${medicionActualDisplay}</td>
-                <td class="consumo-cell">${consumoDisplay}</td>
-                <!-- <td><strong>$${calculo.montoTotal.toFixed(2)}</strong></td> -->
+                <td>${Sanitizer.escapeHtml(calculo.nombre)}</td>
+                <td>${Sanitizer.escapeHtml(calculo.apellido)}</td>
+                <td>${Sanitizer.escapeHtml(calculo.dni)}</td>
+                <td>${Sanitizer.escapeHtml(calculo.habitacion)}</td>
+                <td>${calculo.medicionAnterior.toFixed(1)}</td>
+                <td>${calculo.medicionActual.toFixed(1)}</td>
+                <td class="consumo-cell">${calculo.consumoCalculado.toFixed(1)}</td>
                 <td>${fecha}</td>
                 <td>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        ${hasFotoAnterior ? 
-                            `<img src="${ApiService.getFotoUrl(calculo._id, 'anterior')}" 
-                                  alt="Medición Anterior" 
-                                  class="foto-medidor-preview" 
-                                  onclick="openImageModal('${calculo._id}', 'anterior', 'Medición Anterior - ${calculo.habitacion}')"
-                                  onerror="this.src=''; this.classList.add('imagen-error'); this.alt='Error al cargar'">` 
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                        ${hasFotoAnterior
+                            ? `<img src="${ApiService.getFotoUrl(calculo._id, 'anterior')}"
+                                    alt="Medición Anterior"
+                                    class="foto-medidor-preview"
+                                    onclick="openImageModal('${calculo._id}', 'anterior', 'Medición Anterior - ${Sanitizer.escapeHtml(calculo.habitacion)}')"
+                                    onerror="this.src='';this.classList.add('imagen-error');this.alt='Error al cargar'">`
                             : '<span class="sin-foto">Sin foto ant.</span>'
                         }
-                        ${hasFotoActual ? 
-                            `<img src="${ApiService.getFotoUrl(calculo._id, 'actual')}" 
-                                  alt="Medición Actual" 
-                                  class="foto-medidor-preview" 
-                                  onclick="openImageModal('${calculo._id}', 'actual', 'Medición Actual - ${calculo.habitacion}')"
-                                  onerror="this.src=''; this.classList.add('imagen-error'); this.alt='Error al cargar'">` 
+                        ${hasFotoActual
+                            ? `<img src="${ApiService.getFotoUrl(calculo._id, 'actual')}"
+                                    alt="Medición Actual"
+                                    class="foto-medidor-preview"
+                                    onclick="openImageModal('${calculo._id}', 'actual', 'Medición Actual - ${Sanitizer.escapeHtml(calculo.habitacion)}')"
+                                    onerror="this.src='';this.classList.add('imagen-error');this.alt='Error al cargar'">`
                             : '<span class="sin-foto">Sin foto act.</span>'
                         }
                     </div>
@@ -231,70 +167,46 @@ class UIService {
         `;
     }
 
-    static escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return String(text).replace(/[&<>"']/g, m => map[m]);
-    }
-
     static renderMonthLabel(label) {
         const el = document.getElementById('currentMonthLabel');
-        if (el) el.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+        if (el) el.textContent = label;
     }
 
     static populateHabitacionFilter(calculos) {
         const select = document.getElementById('filterHabitacion');
-        if (!select) return; // Elemento no existe en el DOM
-        
+        if (!select) return;
         const habitaciones = [...new Set(calculos.map(c => c.habitacion))].sort();
-        const options = habitaciones.map(hab => 
-            `<option value="${hab}">${hab}</option>`
-        ).join('');
-        
-        select.innerHTML = '<option value="">Todas las habitaciones</option>' + options;
+        select.innerHTML = '<option value="">Todas las habitaciones</option>' +
+            habitaciones.map(h => `<option value="${Sanitizer.escapeHtml(h)}">${Sanitizer.escapeHtml(h)}</option>`).join('');
     }
 }
 
-// ============================================
-// CONTROLADOR DE MODAL DE IMAGEN
-// ============================================
+// ─── ImageModalController ─────────────────────────────────────────────────────
+
 class ImageModalController {
     static open(calculoId, tipo, title) {
         const modal = document.getElementById('imageModal');
-        const modalImage = document.getElementById('modalImage');
-        const modalTitle = document.getElementById('imageModalTitle');
-        
-        modalTitle.textContent = title;
-        modalImage.src = ApiService.getFotoUrl(calculoId, tipo);
+        document.getElementById('imageModalTitle').textContent = title;
+        document.getElementById('modalImage').src = ApiService.getFotoUrl(calculoId, tipo);
         modal.classList.add('show');
-        
-        // Cerrar con ESC
-        document.addEventListener('keydown', this.handleEscKey);
+        document.addEventListener('keydown', ImageModalController.handleEscKey);
     }
 
     static close() {
-        const modal = document.getElementById('imageModal');
-        modal.classList.remove('show');
-        document.removeEventListener('keydown', this.handleEscKey);
+        document.getElementById('imageModal').classList.remove('show');
+        document.removeEventListener('keydown', ImageModalController.handleEscKey);
     }
 
     static handleEscKey(e) {
-        if (e.key === 'Escape') {
-            ImageModalController.close();
-        }
+        if (e.key === 'Escape') ImageModalController.close();
     }
 }
 
-// ============================================
-// CONTROLADOR PRINCIPAL
-// ============================================
+// ─── Controller ───────────────────────────────────────────────────────────────
+
 class DashboardController {
     static async init() {
+        requireAuth();
         await this.loadData();
         this.setupEventListeners();
     }
@@ -307,7 +219,7 @@ class DashboardController {
             this.render();
         } catch (error) {
             console.error('Error cargando datos:', error);
-            alert('Error al cargar los datos. Por favor, intente nuevamente.');
+            Notifier.error('Error al cargar los datos. Por favor, intentá nuevamente.');
         } finally {
             UIService.hideLoading();
         }
@@ -322,48 +234,39 @@ class DashboardController {
     }
 
     static setupEventListeners() {
-        // Filtro de habitación
         const filterHabitacion = document.getElementById('filterHabitacion');
         if (filterHabitacion) {
-            filterHabitacion.addEventListener('change', (e) => {
+            filterHabitacion.addEventListener('change', e => {
                 appState.setFilter('habitacion', e.target.value);
                 this.render();
             });
         }
 
-        // Búsqueda por DNI
         const searchDNI = document.getElementById('searchDNI');
         if (searchDNI) {
-            searchDNI.addEventListener('input', (e) => {
+            searchDNI.addEventListener('input', e => {
                 appState.setFilter('dni', e.target.value.trim());
                 this.render();
             });
         }
 
-        // Cerrar modal al hacer click fuera
         const imageModal = document.getElementById('imageModal');
         if (imageModal) {
-            imageModal.addEventListener('click', (e) => {
-                if (e.target.id === 'imageModal') {
-                    ImageModalController.close();
-                }
+            imageModal.addEventListener('click', e => {
+                if (e.target.id === 'imageModal') ImageModalController.close();
             });
         }
     }
 }
 
-// ============================================
-// FUNCIONES GLOBALES (Interfaz para HTML)
-// ============================================
+// ─── Global bridges ───────────────────────────────────────────────────────────
+
 function clearFilters() {
     appState.clearFilters();
-    
     const filterHabitacion = document.getElementById('filterHabitacion');
     if (filterHabitacion) filterHabitacion.value = '';
-    
     const searchDNI = document.getElementById('searchDNI');
     if (searchDNI) searchDNI.value = '';
-    
     DashboardController.render();
 }
 
@@ -380,9 +283,8 @@ function changeMonth(delta) {
     DashboardController.render();
 }
 
-// ============================================
-// INICIALIZACIÓN
-// ============================================
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
 document.addEventListener('DOMContentLoaded', () => {
     DashboardController.init();
 });

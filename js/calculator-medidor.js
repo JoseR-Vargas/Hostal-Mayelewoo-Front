@@ -1,727 +1,362 @@
 /**
  * Calculadora de Medidor - Hostal Mayelewoo
- * Implementación siguiendo principios DRY, SOLID, YAGNI
- * Enfoque mobile-first responsive
+ * Principios: DRY, SOLID, YAGNI
  */
 
-class MeterCalculator {
+// ─── State ────────────────────────────────────────────────────────────────────
+
+class MeterState {
     constructor() {
-        this.PRICE_PER_KWH = 439.26;
-        this.form = document.getElementById('calculatorForm');
-        this.submitBtn = document.getElementById('submitBtn');
-        this.modal = document.getElementById('resultModal');
+        this.form             = document.getElementById('calculatorForm');
+        this.submitBtn        = document.getElementById('submitBtn');
+        this.modal            = document.getElementById('resultModal');
         this.calculationPreview = document.getElementById('calculationPreview');
-        
-        this.initializeEventListeners();
-        this.loadSavedData();
     }
 
-    /**
-     * Inicializa todos los event listeners del formulario
-     */
-    initializeEventListeners() {
-        // Envío del formulario
-        this.form.addEventListener('submit', (e) => this.handleSubmit(e));
-        
-        // Inputs de medición para cálculo en tiempo real
-        const medicionAnterior = document.getElementById('medicionAnterior');
-        const medicionActual = document.getElementById('medicionActual');
-        
-        medicionAnterior.addEventListener('input', () => this.calculatePreview());
-        medicionActual.addEventListener('input', () => this.calculatePreview());
-        medicionActual.addEventListener('blur', () => this.validateCurrentMeasurement());
-        
-        // Validación de DNI
-        document.getElementById('dni').addEventListener('input', (e) => this.validateDNI(e));
-        
-        // Inputs de fotos
-        document.getElementById('fotoAnterior').addEventListener('change', (e) => 
-            this.handlePhotoUpload(e, 'fotoAnteriorPreview', 'fotoAnteriorGroup'));
-        document.getElementById('fotoActual').addEventListener('change', (e) => 
-            this.handlePhotoUpload(e, 'fotoActualPreview', 'fotoActualGroup'));
-        
-        // Formateo de números decimales
-        this.setupDecimalInputs();
+    loadSavedPersonalData() {
+        try {
+            const last = JSON.parse(localStorage.getItem('lastMeterSubmission') || 'null');
+            if (!last) return;
+            if (last.nombre)    document.getElementById('nombre').value    = last.nombre;
+            if (last.apellido)  document.getElementById('apellido').value  = last.apellido;
+            if (last.dni)       document.getElementById('dni').value       = last.dni;
+            if (last.habitacion) document.getElementById('habitacion').value = last.habitacion;
+        } catch (_) { /* ignore corrupt localStorage */ }
     }
 
-    /**
-     * Configura los inputs para permitir decimales con coma o punto
-     */
-    setupDecimalInputs() {
-        const decimalInputs = ['medicionAnterior', 'medicionActual'];
-        
-        decimalInputs.forEach(inputId => {
-            const input = document.getElementById(inputId);
-            
-            // Validación en tiempo real
-            input.addEventListener('input', (e) => {
-                let value = e.target.value;
-                
-                // Permitir solo números, punto y coma
-                value = value.replace(/[^0-9.,]/g, '');
-                
-                // Reemplazar múltiples puntos o comas
-                const hasDecimal = value.match(/[.,]/g);
-                if (hasDecimal && hasDecimal.length > 1) {
-                    // Mantener solo el primer separador decimal
-                    const firstSeparatorIndex = value.search(/[.,]/);
-                    value = value.slice(0, firstSeparatorIndex + 1) + 
-                           value.slice(firstSeparatorIndex + 1).replace(/[.,]/g, '');
-                }
-                
-                e.target.value = value;
-                this.calculatePreview();
-            });
-            
-            // Validar formato al perder el foco
-            input.addEventListener('blur', (e) => {
-                let value = e.target.value;
-                const formGroup = input.closest('.form-group');
-                
-                if (value) {
-                    // Validar formato: mínimo 4 dígitos + punto/coma + 1 dígito
-                    if (!this.validateMeasurementFormat(value)) {
-                        this.showFieldError(formGroup, 'Formato requerido: número con punto o coma decimal (Ej: 408.7 o 0035,3)');
-                        return;
-                    }
-                    
-                    // Si el formato es válido, normalizar el valor
-                    const normalized = this.normalizeMeasurement(value);
-                    e.target.value = normalized;
-                    this.clearFieldError(formGroup);
-                    this.calculatePreview();
-                } else {
-                    this.clearFieldError(formGroup);
-                }
-            });
-        });
+    savePersonalData(data) {
+        try {
+            localStorage.setItem('lastMeterSubmission', JSON.stringify({
+                nombre: data.nombre, apellido: data.apellido,
+                dni: data.dni, habitacion: data.habitacion
+            }));
+        } catch (_) { /* ignore quota errors */ }
     }
+}
 
-    /**
-     * Valida que el formato de medición sea correcto: dígitos + punto/coma + dígitos decimales
-     * Ejemplos válidos: 0035.3, 003565,2, 1234.5, 408.7, 00408,7
-     */
-    validateMeasurementFormat(value) {
-        if (!value) return false;
-        
-        value = value.trim();
-        
-        // Patrón: al menos 1 dígito + punto o coma + al menos 1 dígito decimal
-        const pattern = /^\d+[.,]\d+$/;
-        
-        return pattern.test(value);
-    }
+// ─── MeterDomain ─────────────────────────────────────────────────────────────
 
-    /**
-     * Normaliza la medición: si es un entero sin punto/coma, inserta el punto decimal antes del último dígito
-     * Ejemplos:
-     * - "35659" -> "3565.9"
-     * - "38773" -> "3877.3"
-     * - "3565.9" -> "3565.9" (sin cambios)
-     * - "3565,9" -> "3565.9" (cambia coma por punto)
-     */
-    normalizeMeasurement(value) {
+class MeterDomain {
+    static normalizeMeasurement(value) {
         if (!value) return value;
-        
-        // Limpiar espacios
         value = value.trim();
-        
-        // Si ya tiene punto o coma, solo reemplazar coma por punto
-        if (value.includes('.') || value.includes(',')) {
-            return value.replace(',', '.');
-        }
-        
-        // Si es un número entero sin separador decimal
-        // Insertar el punto antes del último dígito
+        if (value.includes('.') || value.includes(',')) return value.replace(',', '.');
         if (/^\d+$/.test(value) && value.length > 1) {
-            // Insertar punto antes del último dígito
-            const insertPosition = value.length - 1;
-            const normalized = value.slice(0, insertPosition) + '.' + value.slice(insertPosition);
-            return normalized;
+            return value.slice(0, -1) + '.' + value.slice(-1);
         }
-        
         return value;
     }
 
-    /**
-     * Valida el DNI (7-8 dígitos)
-     */
-    validateDNI(event) {
-        const input = event.target;
-        const value = input.value;
-        const formGroup = input.closest('.form-group');
-        
-        if (value && (value.length < 7 || value.length > 8 || isNaN(value))) {
-            this.showFieldError(formGroup, 'Ingrese un DNI válido (7-8 dígitos)');
-        } else {
-            this.clearFieldError(formGroup);
-        }
+    static validateFormat(value) {
+        return /^\d+[.,]\d+$/.test((value || '').trim());
     }
 
-    /**
-     * Valida que la medición actual sea mayor a la anterior
-     */
-    validateCurrentMeasurement() {
-        // Normalizar valores (aplicar la normalización automática)
-        const anteriorValue = this.normalizeMeasurement(document.getElementById('medicionAnterior').value);
-        const actualValue = this.normalizeMeasurement(document.getElementById('medicionActual').value);
-        
-        const anterior = parseFloat(anteriorValue) || 0;
-        const actual = parseFloat(actualValue) || 0;
-        const formGroup = document.getElementById('medicionActual').closest('.form-group');
-        
+    static getFormValues() {
+        const anteriorRaw = MeterDomain.normalizeMeasurement(document.getElementById('medicionAnterior').value);
+        const actualRaw   = MeterDomain.normalizeMeasurement(document.getElementById('medicionActual').value);
+        const anterior = parseFloat(anteriorRaw);
+        const actual   = parseFloat(actualRaw);
+        const consumo  = actual - anterior;
+
+        return {
+            nombre:           document.getElementById('nombre').value.trim(),
+            apellido:         document.getElementById('apellido').value.trim(),
+            dni:              document.getElementById('dni').value,
+            habitacion:       document.getElementById('habitacion').value.trim(),
+            medicionAnterior: anterior,
+            medicionActual:   actual,
+            consumoCalculado: consumo,
+            montoTotal:       consumo * CONFIG.PRICE_PER_KWH,
+            precioKWH:        CONFIG.PRICE_PER_KWH,
+            fotoAnterior:     document.getElementById('fotoAnterior').files[0],
+            fotoActual:       document.getElementById('fotoActual').files[0],
+            fechaRegistro:    new Date().toISOString(),
+            timestamp:        Date.now()
+        };
+    }
+
+    static validate() {
+        const errors = [];
+        const required = ['nombre', 'apellido', 'dni', 'habitacion', 'medicionAnterior', 'medicionActual'];
+
+        for (const id of required) {
+            const value = document.getElementById(id).value.trim();
+            if (!value) { errors.push({ id, msg: 'Este campo es requerido' }); continue; }
+            if (id === 'medicionAnterior' || id === 'medicionActual') {
+                if (!MeterDomain.validateFormat(value)) {
+                    errors.push({ id, msg: 'Formato requerido: número con punto o coma decimal (Ej: 408.7 o 0035,3)' });
+                }
+            }
+        }
+
+        const dni = document.getElementById('dni').value;
+        if (dni && (dni.length < 7 || dni.length > 8)) {
+            errors.push({ id: 'dni', msg: 'Ingresá un DNI válido (7-8 dígitos)' });
+        }
+
+        const anteriorVal = MeterDomain.normalizeMeasurement(document.getElementById('medicionAnterior').value);
+        const actualVal   = MeterDomain.normalizeMeasurement(document.getElementById('medicionActual').value);
+        const anterior = parseFloat(anteriorVal) || 0;
+        const actual   = parseFloat(actualVal) || 0;
         if (actual > 0 && anterior > 0 && actual <= anterior) {
-            this.showFieldError(formGroup, 'La medición actual debe ser mayor a la anterior');
+            errors.push({ id: 'medicionActual', msg: 'La medición actual debe ser mayor a la anterior' });
+        }
+
+        if (!document.getElementById('fotoAnterior').files[0]) {
+            errors.push({ id: 'fotoAnteriorGroup', msg: 'Debe cargar la foto del medidor del mes anterior', isPhotoGroup: true });
+        }
+        if (!document.getElementById('fotoActual').files[0]) {
+            errors.push({ id: 'fotoActualGroup', msg: 'Debe cargar la foto del medidor del mes actual', isPhotoGroup: true });
+        }
+
+        return errors;
+    }
+}
+
+// ─── MeterApiService ──────────────────────────────────────────────────────────
+
+class MeterApiService {
+    static async submit(data) {
+        const formData = new FormData();
+        const fields = ['nombre', 'apellido', 'dni', 'habitacion', 'fechaRegistro'];
+        fields.forEach(k => formData.append(k, data[k]));
+        ['medicionAnterior', 'medicionActual', 'consumoCalculado', 'montoTotal', 'precioKWH', 'timestamp']
+            .forEach(k => formData.append(k, String(data[k])));
+        if (data.fotoAnterior) formData.append('fotoAnterior', data.fotoAnterior);
+        if (data.fotoActual)   formData.append('fotoActual', data.fotoActual);
+
+        const res = await APIClient.postForm('/calculos-medidor', formData);
+        return res.json();
+    }
+}
+
+// ─── MeterUIService ───────────────────────────────────────────────────────────
+
+class MeterUIService {
+    static showFieldError(fieldId, message) {
+        const el = document.getElementById(fieldId);
+        const group = el?.closest('.form-group') || el;
+        if (!group) return;
+        group.classList.add('error');
+        const errEl = group.querySelector('.error-message');
+        if (errEl) errEl.textContent = message;
+    }
+
+    static showPhotoGroupError(groupId, message) {
+        const group = document.getElementById(groupId);
+        if (!group) return;
+        group.classList.add('error');
+        let errEl = group.querySelector('.error-message');
+        if (!errEl) {
+            errEl = document.createElement('div');
+            errEl.className = 'error-message';
+            group.appendChild(errEl);
+        }
+        errEl.textContent = message;
+        errEl.style.display = 'block';
+    }
+
+    static clearAllErrors() {
+        document.querySelectorAll('.form-group.error').forEach(g => g.classList.remove('error'));
+    }
+
+    static handlePhotoUpload(file, previewId, groupId) {
+        const error = FileUploadHandler.validate(file);
+        if (error) {
+            MeterUIService.showPhotoGroupError(groupId, error);
             return false;
-        } else {
-            this.clearFieldError(formGroup);
-            return true;
         }
-    }
 
-    /**
-     * Calcula y muestra la vista previa del consumo
-     */
-    calculatePreview() {
-        // Obtener valores y normalizar (aplicar la normalización automática)
-        const anteriorValue = this.normalizeMeasurement(document.getElementById('medicionAnterior').value);
-        const actualValue = this.normalizeMeasurement(document.getElementById('medicionActual').value);
-        
-        const anterior = parseFloat(anteriorValue) || 0;
-        const actual = parseFloat(actualValue) || 0;
-        
-        if (anterior > 0 && actual > anterior) {
-            const consumo = actual - anterior;
-            
-            document.getElementById('consumoCalculado').textContent = `${consumo.toFixed(1)} kWh`;
-            
-            this.calculationPreview.classList.add('show');
-        } else {
-            this.calculationPreview.classList.remove('show');
-        }
-    }
-
-    /**
-     * Maneja la subida de fotos
-     */
-    handlePhotoUpload(event, previewId, groupId) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        // Validar tipo de archivo
-        if (!file.type.startsWith('image/')) {
-            alert('Por favor seleccione un archivo de imagen válido');
-            return;
-        }
-        
-        // Validar tamaño (máximo 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            alert('La imagen es muy grande. Por favor seleccione una imagen menor a 5MB');
-            return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const preview = document.getElementById(previewId);
-            const group = document.getElementById(groupId);
-            
+        const preview = document.getElementById(previewId);
+        const group   = document.getElementById(groupId);
+        const reader  = new FileReader();
+        reader.onload = e => {
             preview.src = e.target.result;
             preview.style.display = 'block';
             group.classList.add('has-photo');
-            
-            // Limpiar error de foto si existe
             group.classList.remove('error');
-            const errorElement = group.querySelector('.error-message');
-            if (errorElement) {
-                errorElement.style.display = 'none';
-            }
+            const errEl = group.querySelector('.error-message');
+            if (errEl) errEl.style.display = 'none';
         };
         reader.readAsDataURL(file);
+        return true;
     }
 
-    /**
-     * Abre la cámara para tomar una foto
-     */
+    static updatePreview(calculationPreview) {
+        const anteriorVal = MeterDomain.normalizeMeasurement(document.getElementById('medicionAnterior').value);
+        const actualVal   = MeterDomain.normalizeMeasurement(document.getElementById('medicionActual').value);
+        const anterior = parseFloat(anteriorVal) || 0;
+        const actual   = parseFloat(actualVal) || 0;
+
+        if (anterior > 0 && actual > anterior) {
+            const consumo = actual - anterior;
+            document.getElementById('consumoCalculado').textContent = `${consumo.toFixed(1)} kWh`;
+            calculationPreview.classList.add('show');
+        } else {
+            calculationPreview.classList.remove('show');
+        }
+    }
+
+    static setSubmitting(submitBtn, isSubmitting) {
+        submitBtn.classList.toggle('processing', isSubmitting);
+        submitBtn.textContent = isSubmitting ? 'Procesando...' : 'Enviar';
+        submitBtn.disabled    = isSubmitting;
+    }
+
+    static showSuccessModal(modal, consumo) {
+        document.getElementById('modalAmount').textContent = `${consumo.toFixed(1)} kWh`;
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    static closeModal(modal) {
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto';
+    }
+
+    static resetForm(form, calculationPreview) {
+        form.reset();
+        calculationPreview.classList.remove('show');
+
+        ['fotoAnteriorPreview', 'fotoActualPreview'].forEach(id => {
+            document.getElementById(id).style.display = 'none';
+        });
+        ['fotoAnteriorGroup', 'fotoActualGroup'].forEach(id => {
+            document.getElementById(id).classList.remove('has-photo');
+        });
+
+        document.querySelectorAll('.form-group.error').forEach(g => g.classList.remove('error'));
+    }
+}
+
+// ─── Controller ───────────────────────────────────────────────────────────────
+
+class MeterController {
+    constructor() {
+        this.state = new MeterState();
+        this.state.loadSavedPersonalData();
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        const { form, calculationPreview } = this.state;
+
+        form.addEventListener('submit', e => this.handleSubmit(e));
+
+        ['medicionAnterior', 'medicionActual'].forEach(id => {
+            const input = document.getElementById(id);
+            input.addEventListener('input', e => {
+                let v = e.target.value.replace(/[^0-9.,]/g, '');
+                const seps = v.match(/[.,]/g);
+                if (seps && seps.length > 1) {
+                    const first = v.search(/[.,]/);
+                    v = v.slice(0, first + 1) + v.slice(first + 1).replace(/[.,]/g, '');
+                }
+                e.target.value = v;
+                MeterUIService.updatePreview(calculationPreview);
+            });
+            input.addEventListener('blur', e => {
+                const value = e.target.value;
+                const group = input.closest('.form-group');
+                if (value) {
+                    if (!MeterDomain.validateFormat(value)) {
+                        MeterUIService.showFieldError(id, 'Formato requerido: número con punto o coma decimal (Ej: 408.7 o 0035,3)');
+                    } else {
+                        e.target.value = MeterDomain.normalizeMeasurement(value);
+                        group.classList.remove('error');
+                        MeterUIService.updatePreview(calculationPreview);
+                    }
+                } else {
+                    group.classList.remove('error');
+                }
+            });
+        });
+
+        document.getElementById('medicionActual').addEventListener('blur', () => {
+            MeterUIService.updatePreview(calculationPreview);
+        });
+
+        document.getElementById('dni').addEventListener('input', e => {
+            const v = e.target.value;
+            const group = e.target.closest('.form-group');
+            if (v && (v.length < 7 || v.length > 8 || isNaN(v))) {
+                MeterUIService.showFieldError('dni', 'Ingresá un DNI válido (7-8 dígitos)');
+            } else {
+                group.classList.remove('error');
+            }
+        });
+
+        document.getElementById('fotoAnterior').addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (file) MeterUIService.handlePhotoUpload(file, 'fotoAnteriorPreview', 'fotoAnteriorGroup');
+        });
+        document.getElementById('fotoActual').addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (file) MeterUIService.handlePhotoUpload(file, 'fotoActualPreview', 'fotoActualGroup');
+        });
+    }
+
+    async handleSubmit(event) {
+        event.preventDefault();
+
+        MeterUIService.clearAllErrors();
+
+        const errors = MeterDomain.validate();
+        if (errors.length) {
+            errors.forEach(({ id, msg, isPhotoGroup }) => {
+                if (isPhotoGroup) MeterUIService.showPhotoGroupError(id, msg);
+                else MeterUIService.showFieldError(id, msg);
+            });
+            return;
+        }
+
+        const { submitBtn, modal } = this.state;
+        MeterUIService.setSubmitting(submitBtn, true);
+
+        try {
+            const data = MeterDomain.getFormValues();
+            const result = await MeterApiService.submit(data);
+
+            if (result.success) {
+                this.state.savePersonalData(data);
+                MeterUIService.showSuccessModal(modal, data.consumoCalculado);
+                MeterUIService.resetForm(this.state.form, this.state.calculationPreview);
+            } else {
+                throw new Error(result.message || 'Error al procesar los datos');
+            }
+        } catch (error) {
+            console.error('Error al enviar formulario:', error);
+            Notifier.error('Error al procesar los datos. Por favor intentá nuevamente.');
+        } finally {
+            MeterUIService.setSubmitting(submitBtn, false);
+        }
+    }
+
     openCamera(inputId) {
         const input = document.getElementById(inputId);
-        input.setAttribute('capture', 'environment'); // Usar cámara trasera
+        input.setAttribute('capture', 'environment');
         input.click();
     }
 
-    /**
-     * Abre la galería para seleccionar una foto
-     */
     openGallery(inputId) {
         const input = document.getElementById(inputId);
         input.removeAttribute('capture');
         input.click();
     }
 
-    /**
-     * Valida todos los campos del formulario
-     */
-    validateForm() {
-        let isValid = true;
-        const requiredFields = ['nombre', 'apellido', 'dni', 'habitacion', 'medicionAnterior', 'medicionActual'];
-        
-        // Limpiar errores previos
-        document.querySelectorAll('.form-group.error').forEach(group => {
-            this.clearFieldError(group);
-        });
-        
-        // Validar campos requeridos
-        requiredFields.forEach(fieldId => {
-            const field = document.getElementById(fieldId);
-            const value = field.value.trim();
-            const formGroup = field.closest('.form-group');
-            
-            // Para campos de medición, validar formato específico
-            if (fieldId === 'medicionAnterior' || fieldId === 'medicionActual') {
-                if (!value) {
-                    this.showFieldError(formGroup, `Este campo es requerido`);
-                    isValid = false;
-                } else if (!this.validateMeasurementFormat(value)) {
-                    this.showFieldError(formGroup, 'Formato requerido: número con punto o coma decimal (Ej: 408.7 o 0035,3)');
-                    isValid = false;
-                }
-                return;
-            }
-            
-            if (!value) {
-                this.showFieldError(formGroup, `Este campo es requerido`);
-                isValid = false;
-            }
-        });
-        
-        // Validaciones específicas
-        if (!this.validateCurrentMeasurement()) {
-            isValid = false;
-        }
-        
-        // Validar DNI
-        const dni = document.getElementById('dni').value;
-        if (dni && (dni.length < 7 || dni.length > 8)) {
-            const formGroup = document.getElementById('dni').closest('.form-group');
-            this.showFieldError(formGroup, 'Ingrese un DNI válido (7-8 dígitos)');
-            isValid = false;
-        }
-        
-        // Validar que ambas fotos estén cargadas
-        const fotoAnterior = document.getElementById('fotoAnterior').files[0];
-        const fotoActual = document.getElementById('fotoActual').files[0];
-        
-        if (!fotoAnterior) {
-            const formGroup = document.getElementById('fotoAnteriorGroup');
-            this.showPhotoError(formGroup, 'Debe cargar la foto del medidor del mes anterior');
-            isValid = false;
-        }
-        
-        if (!fotoActual) {
-            const formGroup = document.getElementById('fotoActualGroup');
-            this.showPhotoError(formGroup, 'Debe cargar la foto del medidor del mes actual');
-            isValid = false;
-        }
-        
-        return isValid;
-    }
-
-    /**
-     * Muestra error en un campo específico
-     */
-    showFieldError(formGroup, message) {
-        formGroup.classList.add('error');
-        const errorElement = formGroup.querySelector('.error-message');
-        if (errorElement) {
-            errorElement.textContent = message;
-        }
-    }
-
-    /**
-     * Muestra error en un grupo de foto
-     */
-    showPhotoError(photoGroup, message) {
-        photoGroup.classList.add('error');
-        
-        // Crear mensaje de error si no existe
-        let errorElement = photoGroup.querySelector('.error-message');
-        if (!errorElement) {
-            errorElement = document.createElement('div');
-            errorElement.className = 'error-message';
-            errorElement.style.display = 'block';
-            errorElement.style.color = '#e74c3c';
-            errorElement.style.fontSize = '0.9rem';
-            errorElement.style.marginTop = '0.5rem';
-            photoGroup.appendChild(errorElement);
-        }
-        errorElement.textContent = message;
-        errorElement.style.display = 'block';
-    }
-
-    /**
-     * Limpia el error de un campo específico
-     */
-    clearFieldError(formGroup) {
-        formGroup.classList.remove('error');
-        const errorElement = formGroup.querySelector('.error-message');
-        if (errorElement) {
-            errorElement.style.display = 'none';
-        }
-    }
-
-    /**
-     * Recopila todos los datos del formulario
-     */
-    getFormData() {
-        // Normalizar valores (aplicar la normalización automática)
-        const anteriorValue = this.normalizeMeasurement(document.getElementById('medicionAnterior').value);
-        const actualValue = this.normalizeMeasurement(document.getElementById('medicionActual').value);
-        
-        const anterior = parseFloat(anteriorValue);
-        const actual = parseFloat(actualValue);
-        const consumo = actual - anterior;
-        const montoTotal = consumo * this.PRICE_PER_KWH;
-        
-        return {
-            nombre: document.getElementById('nombre').value.trim(),
-            apellido: document.getElementById('apellido').value.trim(),
-            dni: document.getElementById('dni').value,
-            habitacion: document.getElementById('habitacion').value.trim(),
-            medicionAnterior: anterior,
-            medicionActual: actual,
-            consumoCalculado: consumo,
-            montoTotal: montoTotal,
-            precioKWH: this.PRICE_PER_KWH,
-            fotoAnterior: document.getElementById('fotoAnterior').files[0],
-            fotoActual: document.getElementById('fotoActual').files[0],
-            fechaRegistro: new Date().toISOString(),
-            timestamp: Date.now()
-        };
-    }
-
-    /**
-     * Guarda los datos en localStorage
-     */
-    saveToLocalStorage(data) {
-        try {
-            // Crear una copia sin los archivos para localStorage
-            const dataToSave = { ...data };
-            delete dataToSave.fotoAnterior;
-            delete dataToSave.fotoActual;
-            
-            // Obtener registros existentes
-            const existingData = JSON.parse(localStorage.getItem('meterCalculations') || '[]');
-            
-            // Agregar nuevo registro
-            existingData.push(dataToSave);
-            
-            // Mantener solo los últimos 50 registros
-            if (existingData.length > 50) {
-                existingData.splice(0, existingData.length - 50);
-            }
-            
-            localStorage.setItem('meterCalculations', JSON.stringify(existingData));
-            localStorage.setItem('lastCalculation', JSON.stringify(dataToSave));
-            
-            console.log('Datos guardados en localStorage:', dataToSave);
-        } catch (error) {
-            console.error('Error al guardar en localStorage:', error);
-        }
-    }
-
-    /**
-     * Envía los datos al servidor (API backend)
-     */
-    async submitToServer(data) {
-        // Crear FormData para enviar archivos y datos
-        const formData = new FormData();
-        
-        // Agregar todos los campos del formulario
-        formData.append('nombre', data.nombre);
-        formData.append('apellido', data.apellido);
-        formData.append('dni', data.dni);
-        formData.append('habitacion', data.habitacion);
-        formData.append('medicionAnterior', data.medicionAnterior.toString());
-        formData.append('medicionActual', data.medicionActual.toString());
-        formData.append('consumoCalculado', data.consumoCalculado.toString());
-        formData.append('montoTotal', data.montoTotal.toString());
-        formData.append('precioKWH', data.precioKWH.toString());
-        formData.append('fechaRegistro', data.fechaRegistro);
-        formData.append('timestamp', data.timestamp.toString());
-        
-        // Agregar fotos si existen
-        if (data.fotoAnterior) {
-            formData.append('fotoAnterior', data.fotoAnterior);
-        }
-        
-        if (data.fotoActual) {
-            formData.append('fotoActual', data.fotoActual);
-        }
-        
-        try {
-            // Obtener la URL del API desde config.js
-            const API_URL = window.API_URL || window.APP_CONFIG?.API_URL || 'hhttps://hostal-mayelewoo-backend.vercel.app';
-            
-            console.log('📤 Enviando cálculo a:', `${API_URL}/api/calculos-medidor`);
-            
-            const response = await fetch(`${API_URL}/api/calculos-medidor`, {
-                method: 'POST',
-                body: formData,
-                // No establecer Content-Type, el navegador lo hará automáticamente con boundary
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
-                throw new Error(errorData.message || `Error del servidor: ${response.status}`);
-            }
-            
-            const result = await response.json();
-            console.log('Respuesta del servidor:', result);
-            return result;
-            
-        } catch (error) {
-            console.error('Error al enviar datos al servidor:', error);
-            
-            // Si falla el envío al servidor, aún guardamos en localStorage como backup
-            console.warn('Guardando datos en localStorage como backup...');
-            
-            throw error;
-        }
-    }
-
-    /**
-     * Maneja el envío del formulario
-     */
-    async handleSubmit(event) {
-        event.preventDefault();
-        
-        if (!this.validateForm()) {
-            return;
-        }
-        
-        // Deshabilitar botón y mostrar estado de procesamiento
-        this.setSubmittingState(true);
-        
-        try {
-            const formData = this.getFormData();
-            
-            // Intentar enviar al servidor primero
-            try {
-                const response = await this.submitToServer(formData);
-                
-                if (response.success) {
-                    // Si se envía correctamente al servidor, también guardamos en localStorage
-                    this.saveToLocalStorage(formData);
-                    
-                    this.showSuccessModal(formData.consumoCalculado);
-                    this.resetForm();
-                } else {
-                    throw new Error(response.message || 'Error al procesar los datos');
-                }
-            } catch (serverError) {
-                console.error('Error al comunicarse con el servidor:', serverError);
-                
-                // Guardar en localStorage como backup
-                this.saveToLocalStorage(formData);
-                
-                // Mostrar modal de éxito directamente ya que los datos están guardados localmente
-                // El usuario puede seguir usando la aplicación aunque el servidor no esté disponible
-                console.warn('⚠️ Datos guardados localmente. Se intentará sincronizar cuando el servidor esté disponible.');
-                
-                this.showSuccessModal(formData.consumoCalculado);
-                this.resetForm();
-            }
-            
-        } catch (error) {
-            console.error('Error al enviar formulario:', error);
-            alert('Error al procesar los datos. Por favor intente nuevamente.');
-        } finally {
-            this.setSubmittingState(false);
-        }
-    }
-
-    /**
-     * Establece el estado de envío del botón
-     */
-    setSubmittingState(isSubmitting) {
-        if (isSubmitting) {
-            this.submitBtn.classList.add('processing');
-            this.submitBtn.textContent = 'Procesando...';
-            this.submitBtn.disabled = true;
-        } else {
-            this.submitBtn.classList.remove('processing');
-            this.submitBtn.textContent = 'Enviar';
-            this.submitBtn.disabled = false;
-        }
-    }
-
-    /**
-     * Muestra el modal de éxito con el resultado
-     */
-    showSuccessModal(consumo) {
-        document.getElementById('modalAmount').textContent = `${consumo.toFixed(1)} kWh`;
-        this.modal.classList.add('show');
-        document.body.style.overflow = 'hidden';
-    }
-
-    /**
-     * Cierra el modal de resultado
-     */
     closeModal() {
-        this.modal.classList.remove('show');
-        document.body.style.overflow = 'auto';
-    }
-
-    /**
-     * Resetea el formulario después del envío exitoso
-     */
-    resetForm() {
-        this.form.reset();
-        this.calculationPreview.classList.remove('show');
-        
-        // Limpiar previews de fotos
-        document.getElementById('fotoAnteriorPreview').style.display = 'none';
-        document.getElementById('fotoActualPreview').style.display = 'none';
-        document.getElementById('fotoAnteriorGroup').classList.remove('has-photo');
-        document.getElementById('fotoActualGroup').classList.remove('has-photo');
-        
-        // Limpiar errores
-        document.querySelectorAll('.form-group.error').forEach(group => {
-            this.clearFieldError(group);
-        });
-    }
-
-    /**
-     * Carga datos guardados previamente (para autocompletado)
-     */
-    loadSavedData() {
-        try {
-            const lastCalculation = localStorage.getItem('lastCalculation');
-            if (lastCalculation) {
-                const data = JSON.parse(lastCalculation);
-                
-                // Solo autocompletar datos personales, no las mediciones
-                if (data.nombre) document.getElementById('nombre').value = data.nombre;
-                if (data.apellido) document.getElementById('apellido').value = data.apellido;
-                if (data.dni) document.getElementById('dni').value = data.dni;
-                if (data.habitacion) document.getElementById('habitacion').value = data.habitacion;
-            }
-        } catch (error) {
-            console.error('Error al cargar datos guardados:', error);
-        }
-    }
-
-    /**
-     * Formatea un número como dinero con separador de miles (punto) y decimales (coma)
-     * Ejemplo: 17614.33 -> 17.614,33
-     */
-    formatMoney(amount) {
-        const fixed = amount.toFixed(2);
-        const parts = fixed.split('.');
-        const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-        return `${integerPart},${parts[1]}`;
+        MeterUIService.closeModal(this.state.modal);
     }
 }
 
-/**
- * Funciones globales para interactuar con los botones de fotos
- */
-window.openCamera = function(inputId) {
-    calculator.openCamera(inputId);
-};
+// ─── Global bridges ───────────────────────────────────────────────────────────
 
-window.openGallery = function(inputId) {
-    calculator.openGallery(inputId);
-};
+function openCamera(inputId)  { calculator.openCamera(inputId); }
+function openGallery(inputId) { calculator.openGallery(inputId); }
+function closeModal()         { calculator.closeModal(); }
 
-window.closeModal = function() {
-    calculator.closeModal();
-};
+// ─── Init ─────────────────────────────────────────────────────────────────────
 
-/**
- * Inicialización cuando el DOM esté listo
- */
-document.addEventListener('DOMContentLoaded', function() {
-    window.calculator = new MeterCalculator();
+document.addEventListener('DOMContentLoaded', () => {
+    window.calculator = new MeterController();
 });
-
-/**
- * Utilidades adicionales para debug y testing
- */
-window.MeterCalculatorUtils = {
-    getStoredCalculations: () => {
-        return JSON.parse(localStorage.getItem('meterCalculations') || '[]');
-    },
-    
-    clearStoredData: () => {
-        localStorage.removeItem('meterCalculations');
-        localStorage.removeItem('lastCalculation');
-        localStorage.removeItem('pendingSyncCalculations');
-        console.log('Datos de localStorage limpiados');
-    },
-    
-    exportData: () => {
-        const data = JSON.parse(localStorage.getItem('meterCalculations') || '[]');
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `meter-calculations-${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-    },
-    
-    /**
-     * Sincroniza datos pendientes del localStorage con el servidor
-     */
-    syncPendingData: async () => {
-        const pending = JSON.parse(localStorage.getItem('pendingSyncCalculations') || '[]');
-        
-        if (pending.length === 0) {
-            console.log('No hay datos pendientes de sincronización');
-            return { success: true, synced: 0 };
-        }
-        
-        const API_URL = window.API_URL || window.APP_CONFIG?.API_URL || 'https://hostal-mayelewoo-backend.vercel.app';
-        let syncedCount = 0;
-        const failedItems = [];
-        
-        for (const item of pending) {
-            try {
-                const formData = new FormData();
-                Object.keys(item).forEach(key => {
-                    if (item[key] !== null && item[key] !== undefined && key !== 'fotoAnterior' && key !== 'fotoActual') {
-                        formData.append(key, item[key].toString());
-                    }
-                });
-                
-                const response = await fetch(`${API_URL}/api/calculos-medidor`, {
-                    method: 'POST',
-                    body: formData,
-                });
-                
-                if (response.ok) {
-                    syncedCount++;
-                } else {
-                    failedItems.push(item);
-                }
-            } catch (error) {
-                console.error('Error al sincronizar item:', error);
-                failedItems.push(item);
-            }
-        }
-        
-        // Actualizar localStorage con solo los items que fallaron
-        localStorage.setItem('pendingSyncCalculations', JSON.stringify(failedItems));
-        
-        console.log(`Sincronizados ${syncedCount} de ${pending.length} registros`);
-        return { success: true, synced: syncedCount, failed: failedItems.length };
-    },
-    
-    /**
-     * Configura la URL del API
-     */
-    setApiUrl: (url) => {
-        window.API_URL = url;
-        console.log('API URL configurada:', url);
-    }
-};
